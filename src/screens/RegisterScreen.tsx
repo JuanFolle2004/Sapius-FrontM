@@ -17,7 +17,14 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     try {
-      await register(email, password, birthDate, name, lastname, phone);
+      await register({
+        email,
+        password,
+        birthDate,
+        name,
+        lastName: lastname,
+        phone,
+      });      
       navigation.navigate('Login');
     } catch {
       alert('Registration failed');
