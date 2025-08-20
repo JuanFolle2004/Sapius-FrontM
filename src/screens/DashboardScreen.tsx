@@ -1,41 +1,81 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { fetchUserFolders } from '../services/folderService';
-import { Folder } from '../types';
+import React, { useEffect, useState, useLayoutEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, Button } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList, Folder } from '../types';
+import { getUserFolders } from '../services/folderService';
+import { useUser } from '../context/UserContext';
+
+type Nav = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 
 export default function DashboardScreen() {
+  const navigation = useNavigation<Nav>();
+  const { logout, token } = useUser();
+
   const [folders, setFolders] = useState<Folder[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // 👇 Configure header button
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => <Button title="Logout" onPress={logout} />,
+    });
+  }, [navigation, logout]);
 
   useEffect(() => {
-    const fetchFolders = async () => {
+    if (!token) return; // wait for token
+    (async () => {
       try {
-        const data = await fetchUserFolders();
+        console.log('🔐 fetching: /folders/');
+        const data = await getUserFolders();
         console.log('📁 Folders loaded:', data);
         setFolders(data);
-      } catch (err) {
-        console.error('❌ Failed to load folders:', err);
+      } catch (e: any) {
+        console.log('❌ folders error:', {
+          message: e?.message,
+          status: e?.response?.status,
+          url: e?.response?.config?.url,
+          data: e?.response?.data,
+        });
+      } finally {
+        setLoading(false);
       }
-    };
+    })();
+  }, [token]);
 
-    fetchFolders();
-  }, []);
+  const openFolder = (folderId: string) => {
+    navigation.navigate('FolderScreen', { folderId });
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>📂 Your Folders</Text>
+    <View style={{ flex: 1, padding: 16 }}>
       <FlatList
         data={folders}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <Text style={styles.item}>{item.title}</Text>}
-        ListEmptyComponent={<Text style={styles.empty}>No folders found.</Text>}
+        keyExtractor={(f) => f.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.card} onPress={() => openFolder(item.id)}>
+            <Text style={styles.title}>{item.title}</Text>
+            {!!item.description && <Text>{item.description}</Text>}
+          </TouchableOpacity>
+        )}
+        ListEmptyComponent={<Text style={{ marginTop: 20 }}>No folders yet.</Text>}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 10 },
-  item: { fontSize: 18, paddingVertical: 6 },
-  empty: { fontSize: 16, color: '#777' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  card: { padding: 16, borderWidth: 1, borderRadius: 12, marginBottom: 12 },
+  title: { fontSize: 18, fontWeight: '600', marginBottom: 4 },
 });
+import { getFolderById } from '../services/folderService';
+import { getGamesByFolder } from '../services/gameService'; 

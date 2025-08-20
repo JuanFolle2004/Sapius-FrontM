@@ -1,16 +1,26 @@
-// src/services/api.ts
 import axios from 'axios';
 
-const api = axios.create({
-  baseURL: 'http://192.168.1.26:8000', // Or your current IP + port
+const API = axios.create({
+  baseURL: 'http://192.168.1.26:8000', 
 });
 
 export const setAuthToken = (token: string) => {
-  if (token) {
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  } else {
-    delete api.defaults.headers.common['Authorization'];
-  }
+  if (token) API.defaults.headers.common.Authorization = `Bearer ${token}`;
+  else delete API.defaults.headers.common.Authorization;
 };
 
-export default api;
+// Optional: debug logs
+API.interceptors.request.use((c) => {
+  console.log('➡️', c.method?.toUpperCase(), (c.baseURL || '') + (c.url || ''));
+  return c;
+});
+API.interceptors.response.use(
+  (r) => r,
+  (e) => {
+    if (e.response) console.log('⛔', e.response.status, e.response.config?.url, e.response.data);
+    else console.log('⛔ (no response)', e.message);
+    return Promise.reject(e);
+  }
+);
+
+export default API;

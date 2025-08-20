@@ -1,21 +1,17 @@
-// src/services/auth.ts
 import api from './api';
-
-interface LoginResponse {
-  access_token: string;
-  token_type: string;
-}
+import type { LoginResponse, RegisterRequest } from '../types';
 
 export const login = async (email: string, password: string): Promise<LoginResponse> => {
-  const formData = new URLSearchParams();
-  formData.append('username', email);
-  formData.append('password', password);
-
-  const response = await api.post<LoginResponse>('/login', formData, {
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
+  const body = new FormData();
+  body.append('username', email);
+  body.append('password', password);
+  const { data } = await api.post<LoginResponse>('/login', body, {
+    headers: { 'Content-Type': 'multipart/form-data' },
   });
+  return data;
+};
 
-  return response.data;
+export const register = async (payload: RegisterRequest) => {
+  const { data } = await api.post('/register', payload);
+  return data;
 };

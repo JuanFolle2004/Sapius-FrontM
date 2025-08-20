@@ -1,37 +1,43 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setAuthToken } from '../services/api';
 
-interface UserContextType {
+type Ctx = {
   token: string;
-  setToken: (token: string) => void;
-}
+  isLoading: boolean;
+  setToken: (t: string) => Promise<void>;
+  logout: () => Promise<void>;
+};
+const UserContext = createContext<Ctx | null>(null);
 
-const UserContext = createContext<UserContextType | null>(null);
+export const useUser = () => {
+  const c = useContext(UserContext);
+  if (!c) throw new Error('useUser must be used within UserProvider');
+  return c;
+};
 
-export const useUser = () => useContext(UserContext);
-
-export const UserProvider = ({ children }: { children: ReactNode }) => {
+export const UserProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [token, setTokenState] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const setToken = (newToken: string) => {
-    setTokenState(newToken);
-    setAuthToken(newToken);
+  const setToken = async (t: string) => {
+    setTokenState(t);
+    setAuthToken(t);
+    if (t) await AsyncStorage.setItem('token', t);
+    else await AsyncStorage.removeItem('token');
   };
+  const logout = async () => setToken('');
 
   useEffect(() => {
-    const loadToken = async () => {
-      const storedToken = await AsyncStorage.getItem('token');
-      if (storedToken) {
-        setToken(storedToken);
+    (async () => {
+      const stored = await AsyncStorage.getItem('token');
+      if (stored) {
+        setAuthToken(stored);
+        setTokenState(stored);
       }
-    };
-    loadToken();
+      setIsLoading(false);
+    })();
   }, []);
 
-  return (
-    <UserContext.Provider value={{ token, setToken }}>
-      {children}
-    </UserContext.Provider>
-  );
+  return <UserContext.Provider value={{ token, isLoading, setToken, logout }}>{children}</UserContext.Provider>;
 };
