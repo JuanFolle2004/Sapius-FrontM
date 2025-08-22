@@ -10,14 +10,34 @@ export interface Folder {
 }
 
 export interface Game {
-  id: string; order: number; question: string;
-  options: string[]; correctAnswer: string; explanation: string;
-  folderId: string; title: string;
+  id: string;
+  order: number;
+  title: string;
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string;
+  folderId?: string;   
+  createdAt: string;
+  createdBy: string;
+  topic: string;       
+  tags: string[];      
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  lastname: string;
+  birthDate: string;
+  phone?: string;
+  interests?: string[];   
 }
 
 export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
+  Interests: undefined;
   Dashboard: undefined;
   FolderScreen: { folderId: string };
   GameScreen: { gameId: string; folderId: string };
