@@ -5,7 +5,7 @@ export interface RegisterRequest {
 
 export interface Folder {
   id: string; title: string; description?: string;
-  createdBy: string; createdAt: string; parentFolderId?: string;
+  createdBy: string; createdAt?: string; parentFolderId?: string;
   gameIds?: string[]; // present in some responses
 }
 

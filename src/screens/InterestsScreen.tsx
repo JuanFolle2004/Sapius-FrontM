@@ -5,13 +5,14 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
 import { STANDARD_INTERESTS } from '../constants/interests';
 import { useUser } from '../context/UserContext';
-import { updateUserInterests } from '../services/userService';
+import { getMe, updateUserInterests } from '../services/userService';
+
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Interests'>;
 
 export default function InterestsScreen() {
     const navigation = useNavigation<Nav>();
-    const { token } = useUser();
+    const { token, setUser } = useUser();
 
     const [selected, setSelected] = useState<string[]>([]);
 
@@ -27,25 +28,29 @@ export default function InterestsScreen() {
 
     const onSubmit = async () => {
         if (selected.length !== 5) {
-        Alert.alert('Error', 'Please select exactly 5 interests.');
-        return;
+            Alert.alert('Error', 'Please select exactly 5 interests.');
+            return;
         }
 
         try {
-        await updateUserInterests(token, selected);
-            const onSave = async () => {
-                try {
-                    await updateUserInterests(token, selected);
-                    navigation.replace("Dashboard");   // ✅ go straight to Dashboard
-                } catch (e) {
-                    console.error(e);
-                }
-            };
+            await updateUserInterests(token, selected);
+
+            // 🔄 refrescar perfil y guardarlo en el contexto
+            const updatedUser = await getMe(token);
+            setUser(updatedUser);
+
+            Alert.alert('Success', 'Your interests have been saved!');
+
+
+            // 👉 No navegues manualmente: AppNavigator va a detectar que
+            //    ya tenés 5 intereses y te va a mandar al Dashboard automáticamente.
         } catch (e: any) {
-        console.log(e?.response?.data || e?.message);
-        Alert.alert('Error', 'Failed to save interests.');
+            console.log(e?.response?.data || e?.message);
+            Alert.alert('Error', 'Failed to save interests.');
         }
     };
+
+
 
     return (
         <View style={styles.container}>

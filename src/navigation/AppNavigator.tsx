@@ -1,5 +1,5 @@
 // src/navigation/AppNavigator.tsx
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -12,9 +12,7 @@ import DashboardScreen from '../screens/DashboardScreen';
 import FolderScreen from '../screens/FolderScreen';
 import GameScreen from '../screens/GameScreen';
 import CourseGenerationScreen from '../screens/CourseGenerationScreen';
-import InterestsScreen from '../screens/InterestsScreen';   // 👈 add this
-
-import { getMe } from '../services/userService';            // 👈 to check user profile
+import InterestsScreen from '../screens/InterestsScreen';
 
 // 👇 Create THREE stacks (Auth vs Interests vs Main)
 const AuthStack = createNativeStackNavigator<RootStackParamList>();
@@ -54,41 +52,21 @@ function InterestsNavigator() {
 }
 
 export default function AppNavigator() {
-  const { token } = useUser();
-  const [needsInterests, setNeedsInterests] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { token, user, isLoading } = useUser();
 
-  useEffect(() => {
-    const checkInterests = async () => {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const user = await getMe(token);
-        if (!user.interests || user.interests.length < 5) {
-          setNeedsInterests(true);
-        } else {
-          setNeedsInterests(false);
-        }
-      } catch (e) {
-        console.log("❌ Error fetching user profile:", e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkInterests();
-  }, [token]);
-
-  if (loading) {
+  if (isLoading) {
     return null; // ⏳ could show a SplashScreen here
   }
 
   return (
     <NavigationContainer>
-      {!token ? <AuthNavigator /> 
-        : needsInterests ? <InterestsNavigator /> 
-        : <MainNavigator />}
+      {!token ? (
+        <AuthNavigator />
+      ) : !user || !user.interests || user.interests.length < 5 ? (
+        <InterestsNavigator />
+      ) : (
+        <MainNavigator />
+      )}
     </NavigationContainer>
   );
 }

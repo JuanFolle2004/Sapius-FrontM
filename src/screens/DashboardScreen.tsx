@@ -1,16 +1,24 @@
 import React, { useEffect, useState, useLayoutEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, Button } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  Button,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, Folder } from '../types';
-import { getUserFolders } from '../services/folderService';
 import { useUser } from '../context/UserContext';
+import { getDashboard } from '../services/dashboardService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 
 export default function DashboardScreen() {
   const navigation = useNavigation<Nav>();
-  const { logout, token } = useUser();
+  const { logout, token, setUser } = useUser();
 
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,16 +30,18 @@ export default function DashboardScreen() {
     });
   }, [navigation, logout]);
 
+  // 👇 Fetch dashboard data
   useEffect(() => {
-    if (!token) return; // wait for token
+    if (!token) return;
     (async () => {
       try {
-        console.log('🔐 fetching: /folders/');
-        const data = await getUserFolders();
-        console.log('📁 Folders loaded:', data);
-        setFolders(data);
+        console.log('🔐 fetching: /dashboard');
+        const data = await getDashboard();
+        console.log('📊 Dashboard loaded:', data);
+        setFolders(data.folders || []);
+        setUser(data.user); // 👈 keep context user in sync
       } catch (e: any) {
-        console.log('❌ folders error:', {
+        console.log('❌ dashboard error:', {
           message: e?.message,
           status: e?.response?.status,
           url: e?.response?.config?.url,
@@ -57,6 +67,12 @@ export default function DashboardScreen() {
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
+      {/* 👤 show user info */}
+      <Text style={styles.welcome}>
+        Welcome, {/** fallback if name missing */}
+        {useUser().user?.name || 'User'}!
+      </Text>
+
       <FlatList
         data={folders}
         keyExtractor={(f) => f.id}
@@ -74,8 +90,7 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  welcome: { fontSize: 20, fontWeight: '600', marginBottom: 16 },
   card: { padding: 16, borderWidth: 1, borderRadius: 12, marginBottom: 12 },
   title: { fontSize: 18, fontWeight: '600', marginBottom: 4 },
 });
-import { getFolderById } from '../services/folderService';
-import { getGamesByFolder } from '../services/gameService'; 
