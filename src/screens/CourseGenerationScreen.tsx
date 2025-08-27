@@ -24,7 +24,7 @@ export default function CourseGenerationScreen() {
     if (!topic.trim()) return;
     setLoading(true);
     try {
-      const prompt = `Create quiz questions about ${topic} for ${difficulty} learners, covering ${focusArea} in ${duration} minutes.`; // same as web :contentReference[oaicite:7]{index=7}
+      const prompt = `Create quiz questions about ${topic} for ${difficulty} learners, covering ${focusArea} in ${duration} minutes.`;
       const { folder } = await createFolderWithGames({
         title: topic,
         description: `AI-generated course on ${topic}`,
@@ -51,7 +51,7 @@ export default function CourseGenerationScreen() {
         placeholder="Enter any topic you're curious about."
       />
 
-      {/* Simple selects as buttons for RN; you can replace with pickers if you want */}
+      {/* Difficulty selection */}
       <Text style={styles.label}>Difficulty</Text>
       <View style={styles.row}>
         {(['beginner','intermediate','advanced'] as const).map(v => (
@@ -61,15 +61,19 @@ export default function CourseGenerationScreen() {
         ))}
       </View>
 
+      {/* Duration selection */}
       <Text style={styles.label}>Duration</Text>
       <View style={styles.row}>
         {(['15','30','60','120'] as const).map(v => (
           <TouchableOpacity key={v} style={[styles.pill, duration===v && styles.pillActive]} onPress={() => setDuration(v)}>
-            <Text style={[styles.pillText, duration===v && styles.pillTextActive]}>{v === '15' ? '15m' : v === '30' ? '30m' : v === '60' ? '1h' : '2h'}</Text>
+            <Text style={[styles.pillText, duration===v && styles.pillTextActive]}>
+              {v === '15' ? '15m' : v === '30' ? '30m' : v === '60' ? '1h' : '2h'}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
+      {/* Focus area selection */}
       <Text style={styles.label}>Focus area</Text>
       <View style={styles.row}>
         {(['general','practical','theoretical','historical'] as const).map(v => (

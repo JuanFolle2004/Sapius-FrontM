@@ -1,17 +1,18 @@
 import api from './api';
-import type { LoginResponse, RegisterRequest } from '../types';
+import type { RegisterRequest } from '../types';
 
-export const login = async (email: string, password: string): Promise<LoginResponse> => {
-  const body = new FormData();
-  body.append('username', email);
-  body.append('password', password);
-  const { data } = await api.post<LoginResponse>('/login', body, {
+export async function login(email: string, password: string) {
+  const form = new FormData();
+  form.append('username', email);
+  form.append('password', password);
+
+  const res = await api.post<{ access_token: string }>('/login', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-  return data;
-};
+  return res.data;
+}
 
-export const register = async (payload: RegisterRequest) => {
-  const { data } = await api.post('/register', payload);
-  return data;
-};
+export async function register(payload: RegisterRequest) {
+  const res = await api.post('/register', payload);
+  return res.data;
+}

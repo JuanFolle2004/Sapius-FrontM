@@ -3,12 +3,16 @@ import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView, Touchable
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, RegisterRequest } from '../types';
-import { register } from '../services/auth';
+import { register, login } from '../services/auth';        // ✅ FIXED imports
+import { getMe } from '../services/userService';          // ✅ hydrate profile
+import { useUser } from '../context/UserContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Register'>;
 
 export default function RegisterScreen() {
   const navigation = useNavigation<Nav>();
+  const { setToken, setUser } = useUser();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -22,13 +26,30 @@ export default function RegisterScreen() {
       Alert.alert('Missing fields', 'Please complete all required fields.');
       return;
     }
-    const payload: RegisterRequest = { email, password, name, lastname, phone, birthDate, interests:[] };
+
+    // 👇 fix lastName mapping
+    const payload: RegisterRequest = { 
+      email, 
+      password, 
+      name, 
+      lastName: lastname,   // ✅ match RegisterRequest type
+      phone, 
+      birthDate, 
+      interests: [] 
+    };
+
     try {
       setLoading(true);
       await register(payload);
-      Alert.alert('Success', 'Account created. You can now sign in.', [
-        { text: 'OK', onPress: () => navigation.navigate('Login') },
-      ]);
+
+      // ✅ immediately log in
+      const { access_token } = await login(email, password);
+      await setToken(access_token);
+
+      // ✅ hydrate user profile
+      const profile = await getMe(access_token);
+      setUser(profile);
+
     } catch (e: any) {
       const msg = e?.response?.data?.detail || e?.message || 'Registration failed';
       Alert.alert('Error', String(msg));

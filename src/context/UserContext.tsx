@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setAuthToken } from '../services/api';
+import { getMe } from '../services/userService';   // 👈 add this
 
 // 👉 define a proper User type according to your backend
 type User = {
@@ -52,8 +53,20 @@ export const UserProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     (async () => {
       const stored = await AsyncStorage.getItem('token');
       if (stored) {
+        console.log("🔐 Found stored token:", stored);
         setAuthToken(stored);
         setTokenState(stored);
+
+        try {
+          const profile = await getMe(stored); // 👈 fetch backend user
+          console.log("👤 Loaded profile:", profile);
+          setUser(profile);
+        } catch (e) {
+          console.log("⚠️ Failed to fetch profile, clearing token", e);
+          await AsyncStorage.removeItem('token');
+          setTokenState('');
+          setUser(null);
+        }
       }
       setIsLoading(false);
     })();

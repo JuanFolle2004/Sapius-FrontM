@@ -1,12 +1,26 @@
-export interface LoginResponse { access_token: string; token_type: string; }
+export interface LoginResponse { 
+  access_token: string; 
+  token_type: string; 
+}
+
 export interface RegisterRequest {
-  email: string; password: string; birthDate: string; name: string; lastName: string; phone: string;
+  email: string;
+  password: string;
+  birthDate: string;
+  name: string;
+  lastName: string;
+  phone?: string;
+  interests?: string[];   // ✅ added so you can send []
 }
 
 export interface Folder {
-  id: string; title: string; description?: string;
-  createdBy: string; createdAt?: string; parentFolderId?: string;
-  gameIds?: string[]; // present in some responses
+  id: string;
+  title: string;
+  description?: string;
+  createdBy: string;
+  createdAt?: string;
+  parentFolderId?: string;
+  gameIds?: string[];
 }
 
 export interface Game {
@@ -31,15 +45,20 @@ export interface User {
   lastname: string;
   birthDate: string;
   phone?: string;
-  interests?: string[];   
+  interests?: string[];   // ✅ already good
 }
 
 export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
-  Interests: undefined;
   Dashboard: undefined;
   FolderScreen: { folderId: string };
-  GameScreen: { gameId: string; folderId: string };
+  GameScreen: {
+    gameId: string;
+    folderId: string;
+    games?: Game[];        // ✅ for random trivia
+    currentIndex?: number; // ✅ track progress
+  };
   CourseGeneration: undefined;
+  Interests: undefined;
 };

@@ -1,4 +1,3 @@
-// src/navigation/AppNavigator.tsx
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -14,7 +13,6 @@ import GameScreen from '../screens/GameScreen';
 import CourseGenerationScreen from '../screens/CourseGenerationScreen';
 import InterestsScreen from '../screens/InterestsScreen';
 
-// 👇 Create THREE stacks (Auth vs Interests vs Main)
 const AuthStack = createNativeStackNavigator<RootStackParamList>();
 const AppStack  = createNativeStackNavigator<RootStackParamList>();
 const InterestsStack = createNativeStackNavigator<RootStackParamList>();
@@ -55,14 +53,18 @@ export default function AppNavigator() {
   const { token, user, isLoading } = useUser();
 
   if (isLoading) {
-    return null; // ⏳ could show a SplashScreen here
+    return null; // ⏳ show splash screen if you want
   }
+
+  console.log("👤 Navigator user:", user);
 
   return (
     <NavigationContainer>
       {!token ? (
         <AuthNavigator />
-      ) : !user || !user.interests || user.interests.length < 5 ? (
+      ) : !user ? (
+        <InterestsNavigator />
+      ) : !user.interests || user.interests.length < 5 ? (
         <InterestsNavigator />
       ) : (
         <MainNavigator />

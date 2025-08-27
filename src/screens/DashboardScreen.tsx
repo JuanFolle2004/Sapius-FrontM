@@ -7,18 +7,20 @@ import {
   ActivityIndicator,
   StyleSheet,
   Button,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, Folder } from '../types';
 import { useUser } from '../context/UserContext';
 import { getDashboard } from '../services/dashboardService';
+import { getRandomFolderWithGames } from '../services/folderService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 
 export default function DashboardScreen() {
   const navigation = useNavigation<Nav>();
-  const { logout, token, setUser } = useUser();
+  const { logout, token, setUser, user } = useUser();
 
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +59,27 @@ export default function DashboardScreen() {
     navigation.navigate('FolderScreen', { folderId });
   };
 
+  const openRandomTrivia = async () => {
+    try {
+      const { folder, games } = await getRandomFolderWithGames();
+
+      if (games.length > 0) {
+        // 🚀 Jump straight into GameScreen with first game + full list
+        navigation.navigate('GameScreen', {
+          gameId: games[0].id,
+          folderId: folder.id,
+          games,
+          currentIndex: 0,
+        });
+      } else {
+        Alert.alert('No games available', 'Could not load random trivia.');
+      }
+    } catch (e: any) {
+      console.log('❌ random trivia error', e?.response?.data || e?.message);
+      Alert.alert('Error', 'Could not load random trivia.');
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -67,12 +90,27 @@ export default function DashboardScreen() {
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
-      {/* 👤 show user info */}
       <Text style={styles.welcome}>
-        Welcome, {/** fallback if name missing */}
-        {useUser().user?.name || 'User'}!
+        Welcome, {user?.name || 'User'}!
       </Text>
 
+      {/* ➕ New AI Folder button */}
+      <TouchableOpacity
+        style={styles.newFolderBtn}
+        onPress={() => navigation.navigate('CourseGeneration')}
+      >
+        <Text style={styles.newFolderText}>➕ New AI Folder</Text>
+      </TouchableOpacity>
+
+      {/* 🎲 Random Trivia button */}
+      <TouchableOpacity
+        style={styles.randomBtn}
+        onPress={openRandomTrivia}
+      >
+        <Text style={styles.randomText}>🎲 Random Trivia</Text>
+      </TouchableOpacity>
+
+      {/* User's saved folders */}
       <FlatList
         data={folders}
         keyExtractor={(f) => f.id}
@@ -93,4 +131,32 @@ const styles = StyleSheet.create({
   welcome: { fontSize: 20, fontWeight: '600', marginBottom: 16 },
   card: { padding: 16, borderWidth: 1, borderRadius: 12, marginBottom: 12 },
   title: { fontSize: 18, fontWeight: '600', marginBottom: 4 },
+
+  // ➕ New AI Folder
+  newFolderBtn: {
+    backgroundColor: '#14b8a6',
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  newFolderText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+
+  // 🎲 Random Trivia
+  randomBtn: {
+    backgroundColor: '#f59e0b',
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  randomText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+  },
 });
