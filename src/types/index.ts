@@ -8,9 +8,9 @@ export interface RegisterRequest {
   password: string;
   birthDate: string;
   name: string;
-  lastName: string;
+  lastname: string;   // 👈 fixed lowercase
   phone?: string;
-  interests?: string[];   // ✅ added so you can send []
+  interests?: string[];   // ✅ optional
 }
 
 export interface Folder {
@@ -42,10 +42,10 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  lastname: string;
+  lastname: string;   // 👈 consistent with backend
   birthDate: string;
   phone?: string;
-  interests?: string[];   // ✅ already good
+  interests?: string[];
 }
 
 export type RootStackParamList = {
@@ -56,9 +56,10 @@ export type RootStackParamList = {
   GameScreen: {
     gameId: string;
     folderId: string;
-    games?: Game[];        // ✅ for random trivia
-    currentIndex?: number; // ✅ track progress
+    games?: Game[];        // 👈 allow passing the whole list
+    currentIndex?: number; // 👈 keep track of current position
   };
   CourseGeneration: undefined;
   Interests: undefined;
 };
+

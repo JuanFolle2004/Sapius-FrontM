@@ -25,10 +25,12 @@ export default function DashboardScreen() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 👇 Configure header button
+  // 👇 Configure header buttons (logout + disable back)
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => <Button title="Logout" onPress={logout} />,
+      headerBackVisible: false,   // 🚫 hide back arrow
+      gestureEnabled: false,      // 🚫 disable swipe-back gesture
     });
   }, [navigation, logout]);
 

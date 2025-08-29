@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
 import { STANDARD_INTERESTS } from '../constants/interests';
@@ -10,9 +9,7 @@ import { getMe, updateUserInterests } from '../services/userService';
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Interests'>;
 
 export default function InterestsScreen() {
-  const navigation = useNavigation<Nav>();
   const { token, setUser } = useUser();
-
   const [selected, setSelected] = useState<string[]>([]);
 
   const toggleInterest = (interest: string) => {
@@ -39,15 +36,11 @@ export default function InterestsScreen() {
       console.log("📌 updatedUser:", updatedUser);
       setUser(updatedUser);
 
-      Alert.alert('Success', 'Your interests have been saved!');
+      Alert.alert('Success', 'Your interests have been saved! 🎉');
+      // ⚠️ No manual navigation here!
+      // AppNavigator will automatically switch to Dashboard
+      // because user.interests.length >= 5
 
-      // ✅ force navigation to Dashboard if interests are complete
-      if (updatedUser.interests && updatedUser.interests.length >= 5) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Dashboard' }],
-        });
-      }
     } catch (e: any) {
       console.log(e?.response?.data || e?.message);
       Alert.alert('Error', 'Failed to save interests.');
