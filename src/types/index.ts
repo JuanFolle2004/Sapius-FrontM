@@ -1,6 +1,6 @@
-export interface LoginResponse { 
-  access_token: string; 
-  token_type: string; 
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
 }
 
 export interface RegisterRequest {
@@ -8,9 +8,9 @@ export interface RegisterRequest {
   password: string;
   birthDate: string;
   name: string;
-  lastname: string;   // 👈 fixed lowercase
+  lastname: string;   // 👈 consistent lowercase
   phone?: string;
-  interests?: string[];   // ✅ optional
+  interests?: string[]; // optional
 }
 
 export interface Folder {
@@ -23,6 +23,17 @@ export interface Folder {
   gameIds?: string[];
 }
 
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  lastname: string;
+  birthDate: string;
+  phone?: string;
+  interests?: string[];
+  playedGameIds?: string[];   // ✅ NEW
+}
+
 export interface Game {
   id: string;
   order: number;
@@ -31,22 +42,13 @@ export interface Game {
   options: string[];
   correctAnswer: string;
   explanation: string;
-  folderId?: string;   
-  createdAt: string;
+  createdAt: string;        // ISO string from backend
   createdBy: string;
-  topic: string;       
-  tags: string[];      
+  folderId?: string;        // can be "random"
+  topic?: string;           // optional
+  tags: string[];
 }
 
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  lastname: string;   // 👈 consistent with backend
-  birthDate: string;
-  phone?: string;
-  interests?: string[];
-}
 
 export type RootStackParamList = {
   Login: undefined;
@@ -56,10 +58,9 @@ export type RootStackParamList = {
   GameScreen: {
     gameId: string;
     folderId: string;
-    games?: Game[];        // 👈 allow passing the whole list
-    currentIndex?: number; // 👈 keep track of current position
+    games: Game[];        // ✅ required
+    currentIndex: number; // ✅ required
   };
   CourseGeneration: undefined;
   Interests: undefined;
 };
-

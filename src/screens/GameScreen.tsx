@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, Game } from '../types';
-import { getGameById } from '../services/gameService';
+import { getGameById, markGamePlayed } from '../services/gameService';
 
 type Route = RouteProp<RootStackParamList, 'GameScreen'>;
 type Nav = NativeStackNavigationProp<RootStackParamList, 'GameScreen'>;
@@ -12,54 +12,46 @@ export default function GameScreen() {
   const { params } = useRoute<Route>();
   const navigation = useNavigation<Nav>();
 
-  const { gameId, folderId, games, currentIndex } = params;
+  const { gameId, folderId, games, currentIndex, onPlayed } = params as any;
 
   const [game, setGame] = useState<Game | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (games && typeof currentIndex === 'number') {
-      setGame(games[currentIndex]);
-      setSelected(null);   // ✅ reset selection so explanation isn’t shown
-      setLoading(false);
-    } else {
-      (async () => {
-        try {
-          const g = await getGameById(gameId);
-          setGame(g);
-          setSelected(null);  // ✅ reset here too
-        } catch (e) {
-          console.log('❌ failed to load game', e);
-        } finally {
-          setLoading(false);
-        }
-      })();
+    (async () => {
+      const data = await getGameById(gameId);
+      setGame(data);
+    })();
+  }, [gameId]);
+
+  // ✅ mark game as played once answered
+  useEffect(() => {
+    if (selected && game) {
+      markGamePlayed(game.id).catch(e =>
+        console.log("❌ mark played error", e)
+      );
+      if (onPlayed) onPlayed(game.id); // ✅ callback to FolderScreen
     }
-  }, [gameId, games, currentIndex]);
+  }, [selected, game]);
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator />
-      </View>
-    );
-  }
+  if (!game) return <Text>Loading...</Text>;
 
-  if (!game) {
-    return (
-      <View style={styles.center}>
-        <Text>Game not found</Text>
-      </View>
-    );
-  }
-
-  const isLastGame =
-    games && typeof currentIndex === 'number' && currentIndex === games.length - 1;
+  const goNext = () => {
+    if (currentIndex + 1 < games.length) {
+      navigation.replace('GameScreen', {
+        gameId: games[currentIndex + 1].id,
+        folderId,
+        games,
+        currentIndex: currentIndex + 1,
+        onPlayed, // pass down callback
+      } as any);
+    } else {
+      navigation.goBack(); // back to folder when finished
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{game.title}</Text>
+    <View style={{ flex: 1, padding: 16 }}>
       <Text style={styles.question}>{game.question}</Text>
 
       {game.options.map((opt) => (
@@ -67,92 +59,61 @@ export default function GameScreen() {
           key={opt}
           style={[
             styles.option,
-            selected === opt && {
-              backgroundColor: opt === game.correctAnswer ? '#4ade80' : '#f87171',
-            },
+            selected === opt && opt === game.correctAnswer && styles.correct,
+            selected === opt && opt !== game.correctAnswer && styles.incorrect,
+            selected !== null && opt === game.correctAnswer && styles.correct,
           ]}
-          onPress={() => setSelected(opt)}
+          onPress={() => {
+            if (selected) return; // prevent multiple answers
+            setSelected(opt);
+          }}
         >
           <Text>{opt}</Text>
         </TouchableOpacity>
       ))}
 
       {selected && (
-        <Text style={styles.explain}>Explanation: {game.explanation}</Text>
-      )}
-
-      {/* Next Question (only if not last) */}
-      {games && typeof currentIndex === 'number' && currentIndex < games.length - 1 && (
-        <TouchableOpacity
-          style={styles.nextBtn}
-          onPress={() =>
-            navigation.navigate('GameScreen', {
-              gameId: games[currentIndex + 1].id,
-              folderId,
-              games,
-              currentIndex: currentIndex + 1,
-            })
-          }
-        >
-          <Text style={styles.nextText}>➡️ Next Question</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* Back to Folder (only if last) */}
-      {games && isLastGame && (
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => {
-            if (folderId) {
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'FolderScreen', params: { folderId } }],
-              });
-            } else {
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Dashboard' }],
-              });
-            }
-          }}
-        >
-          <Text style={styles.backText}>⬅️ Back to Folder</Text>
-        </TouchableOpacity>
+        <>
+          <Text style={styles.explanation}>💡 {game.explanation}</Text>
+          <TouchableOpacity style={styles.nextBtn} onPress={goNext}>
+            <Text style={styles.nextText}>
+              {currentIndex + 1 < games.length ? "➡️ Next Question" : "🏁 Finish"}
+            </Text>
+          </TouchableOpacity>
+        </>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 22, fontWeight: '700', marginBottom: 12 },
-  question: { fontSize: 18, marginBottom: 16 },
+  question: { fontSize: 20, fontWeight: '600', marginBottom: 16 },
   option: {
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 8,
+    borderRadius: 12,
+    marginBottom: 10,
+    backgroundColor: '#fff',
   },
-  explain: { marginTop: 12, fontStyle: 'italic' },
-
-  // Buttons
+  correct: {
+    backgroundColor: '#d1fae5',
+    borderColor: '#10b981',
+  },
+  incorrect: {
+    backgroundColor: '#fee2e2',
+    borderColor: '#ef4444',
+  },
+  explanation: {
+    marginTop: 16,
+    fontStyle: 'italic',
+    color: '#555',
+  },
   nextBtn: {
     marginTop: 20,
     backgroundColor: '#14b8a6',
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
   },
   nextText: { color: 'white', fontWeight: '700' },
-
-  backBtn: {
-    marginTop: 20,
-    backgroundColor: '#f59e0b',
-    padding: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  backText: { color: 'white', fontWeight: '700' },
 });
