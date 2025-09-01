@@ -6,20 +6,20 @@ export interface LoginResponse {
 export interface RegisterRequest {
   email: string;
   password: string;
-  birthDate: string;
+  birthDate: string;   // ISO date
   name: string;
-  lastname: string;   // 👈 consistent lowercase
+  lastname: string;
   phone?: string;
-  interests?: string[]; // optional
+  interests?: string[];
 }
 
 export interface Folder {
   id: string;
   title: string;
   description?: string;
+  prompt?: string;
   createdBy: string;
   createdAt?: string;
-  parentFolderId?: string;
   gameIds?: string[];
 }
 
@@ -31,7 +31,7 @@ export interface User {
   birthDate: string;
   phone?: string;
   interests?: string[];
-  playedGameIds?: string[];   // ✅ NEW
+  playedGameIds?: string[];
 }
 
 export interface Game {
@@ -42,13 +42,12 @@ export interface Game {
   options: string[];
   correctAnswer: string;
   explanation: string;
-  createdAt: string;        // ISO string from backend
+  createdAt: string;   // ISO string from backend
   createdBy: string;
-  folderId?: string;        // can be "random"
-  topic?: string;           // optional
+  folderId?: string;   // can be "random"
+  topic?: string;
   tags: string[];
 }
-
 
 export type RootStackParamList = {
   Login: undefined;
@@ -58,8 +57,8 @@ export type RootStackParamList = {
   GameScreen: {
     gameId: string;
     folderId: string;
-    games: Game[];        // ✅ required
-    currentIndex: number; // ✅ required
+    games: Game[];
+    currentIndex: number;
   };
   CourseGeneration: undefined;
   Interests: undefined;

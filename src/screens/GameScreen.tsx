@@ -54,23 +54,31 @@ export default function GameScreen() {
     <View style={{ flex: 1, padding: 16 }}>
       <Text style={styles.question}>{game.question}</Text>
 
-      {game.options.map((opt) => (
-        <TouchableOpacity
-          key={opt}
-          style={[
-            styles.option,
-            selected === opt && opt === game.correctAnswer && styles.correct,
-            selected === opt && opt !== game.correctAnswer && styles.incorrect,
-            selected !== null && opt === game.correctAnswer && styles.correct,
-          ]}
-          onPress={() => {
-            if (selected) return; // prevent multiple answers
-            setSelected(opt);
-          }}
-        >
-          <Text>{opt}</Text>
-        </TouchableOpacity>
-      ))}
+      {game.options.map((opt) => {
+  const isCorrect = opt === game.correctAnswer;
+  const isSelected = opt === selected;
+
+  const optionStyle = [
+    styles.option,
+    selected && isSelected && isCorrect && styles.correct,
+    selected && isSelected && !isCorrect && styles.incorrect,
+    selected && !isSelected && isCorrect && styles.correct,
+  ];
+
+  return (
+    <TouchableOpacity
+      key={opt}
+      style={optionStyle}
+      onPress={() => {
+        if (selected) return; // prevent multiple answers
+        setSelected(opt);
+      }}
+    >
+      <Text>{opt}</Text>
+    </TouchableOpacity>
+  );
+})}
+
 
       {selected && (
         <>

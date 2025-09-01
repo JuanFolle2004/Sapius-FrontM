@@ -1,56 +1,82 @@
 import api from './api';
 import type { Folder, Game } from '../types';
 
+// Get all user folders
 export async function getUserFolders(): Promise<Folder[]> {
-  const { data } = await api.get<Folder[]>('/folders/');             // GET /folders/
+  const { data } = await api.get<Folder[]>('/folders/');
   return data;
 }
 
+// Get folder by ID
 export async function getFolderById(folderId: string): Promise<Folder> {
-  const { data } = await api.get<Folder>(`/folders/${folderId}`);    // GET /folders/{folder_id}
+  const { data } = await api.get<Folder>(`/folders/${folderId}`);
   return data;
 }
 
-export async function getFolderWithGames(folderId: string): Promise<{ folder: Folder; games: Game[] }> {
-  const { data } = await api.get<{ folder: Folder; games: Game[] }>(`/folders/${folderId}/with-games`);
+// Get folder + its games
+export async function getFolderWithGames(
+  folderId: string
+): Promise<{ folder: Folder; games: Game[] }> {
+  const { data } = await api.get<{ folder: Folder; games: Game[] }>(
+    `/folders/${folderId}/with-games`
+  );
   return data;
 }
 
-export async function createFolder(payload: { title: string; description?: string }) {
-  const { data } = await api.post<Folder>('/folders/', payload);     // POST /folders/
-  return data;
-}
-
-// Optional: generate from folder (like your web)
-export async function generateGamesForFolder(folderId: string) {
-  const { data } = await api.post(`/ai/generate-from-folder/${folderId}`);
-  return data;
-}
-
-export async function createFolderWithGames(payload: {
+// Create folder only
+export async function createFolder(payload: {
   title: string;
   description?: string;
-  prompt: string;
-}): Promise<{ folder: Folder; games: Game[] }> {
-  // 1) create folder
-  const { data: folder } = await api.post<Folder>('/folders/', {
-    title: payload.title,
-    description: payload.description,
-    prompt: payload.prompt,
-  });
-
-  // 2) ask AI to generate games for it
-  await api.post(`/ai/generate-from-folder/${folder.id}`);
-
-  // 3) fetch folder + games
-  const { data } = await api.get<{ folder: Folder; games: Game[] }>(`/folders/${folder.id}/with-games`);
+  prompt?: string;
+}) {
+  const { data } = await api.post<Folder>('/folders/', payload);
   return data;
 }
 
-// 🎲 Random trivia — directly from backend
-export async function getRandomFolderWithGames(): Promise<{ folder: Folder; games: Game[] }> {
+// ✅ Create folder + generate games
+export async function createFolderWithGames(payload: {
+  prompt: string;
+  duration: number; // must be 5, 10, or 15
+  title?: string;
+  description?: string;
+}): Promise<{ folder: Folder; games: Game[] }> {
+  const { data } = await api.post<{ folder: Folder; games: Game[] }>(
+    '/folders/with-games',
+    payload
+  );
+  return data;
+}
+
+// Generate more games for existing folder
+export async function generateGamesForFolder(folderId: string, duration: number = 5) {
+  const { data } = await api.post<Game[]>(
+    `/ai/generate-from-folder/${folderId}`,
+    { duration }
+  );
+  return data;
+}
+
+// Get random folder with games
+export async function getRandomFolderWithGames(): Promise<{
+  folder: Folder;
+  games: Game[];
+}> {
   const { data } = await api.get<{ folder: Folder; games: Game[] }>(
     '/ai/folders/random/with-games'
   );
   return data;
+}
+
+// Update folder
+export async function updateFolder(
+  folderId: string,
+  updates: { title?: string; description?: string; prompt?: string }
+): Promise<Folder> {
+  const { data } = await api.put<Folder>(`/folders/${folderId}`, updates);
+  return data;
+}
+
+// Delete folder
+export async function deleteFolder(folderId: string): Promise<void> {
+  await api.delete(`/folders/${folderId}`);
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Button,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, Folder } from '../types';
 import { useUser } from '../context/UserContext';
@@ -29,33 +29,38 @@ export default function DashboardScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => <Button title="Logout" onPress={logout} />,
-      headerBackVisible: false,   // 🚫 hide back arrow
-      gestureEnabled: false,      // 🚫 disable swipe-back gesture
+      headerBackVisible: false,
+      gestureEnabled: false,
     });
   }, [navigation, logout]);
 
   // 👇 Fetch dashboard data
-  useEffect(() => {
+  async function fetchDashboard() {
     if (!token) return;
-    (async () => {
-      try {
-        console.log('🔐 fetching: /dashboard');
-        const data = await getDashboard();
-        console.log('📊 Dashboard loaded:', data);
-        setFolders(data.folders || []);
-        setUser(data.user); // 👈 keep context user in sync
-      } catch (e: any) {
-        console.log('❌ dashboard error:', {
-          message: e?.message,
-          status: e?.response?.status,
-          url: e?.response?.config?.url,
-          data: e?.response?.data,
-        });
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [token]);
+    try {
+      console.log('🔐 fetching: /dashboard');
+      const data = await getDashboard();
+      console.log('📊 Dashboard loaded:', data);
+      setFolders(data.folders || []);
+      setUser(data.user);
+    } catch (e: any) {
+      console.log('❌ dashboard error:', {
+        message: e?.message,
+        status: e?.response?.status,
+        url: e?.response?.config?.url,
+        data: e?.response?.data,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ✅ Refetch when screen regains focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchDashboard();
+    }, [token])
+  );
 
   const openFolder = (folderId: string) => {
     navigation.navigate('FolderScreen', { folderId });
@@ -64,9 +69,7 @@ export default function DashboardScreen() {
   const openRandomTrivia = async () => {
     try {
       const { folder, games } = await getRandomFolderWithGames();
-
       if (games.length > 0) {
-        // 🚀 Jump straight into GameScreen with first game + full list
         navigation.navigate('GameScreen', {
           gameId: games[0].id,
           folderId: folder.id,

@@ -1,11 +1,27 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
-import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  Alert,
+} from 'react-native';
+import { useRoute, useNavigation, RouteProp, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Game, Folder, RootStackParamList } from '../types';
-import { getFolderWithGames, generateGamesForFolder } from '../services/folderService';
+import {
+  getFolderWithGames,
+  generateGamesForFolder,
+  updateFolder,
+  deleteFolder,
+} from '../services/folderService';
 import { getMe } from '../services/userService';
 import { useUser } from '../context/UserContext';
+
+// ✅ For rename input
+import Prompt from 'react-native-prompt-android';
 
 type Route = RouteProp<RootStackParamList, 'FolderScreen'>;
 type Nav = NativeStackNavigationProp<RootStackParamList, 'FolderScreen'>;
@@ -38,9 +54,12 @@ export default function FolderScreen() {
     }
   }
 
-  useEffect(() => {
-    fetchFolder();
-  }, [token, params?.folderId]);
+  // 👇 Refetch whenever screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchFolder();
+    }, [token, params?.folderId])
+  );
 
   // generate new games
   async function handleGenerate() {
@@ -48,19 +67,73 @@ export default function FolderScreen() {
     setGenerating(true);
     try {
       await generateGamesForFolder(folder.id);
-      await fetchFolder();
+      await fetchFolder(); // refresh after generation
     } catch (e) {
-      console.log("❌ generate games error", e);
+      console.log('❌ generate games error', e);
     } finally {
       setGenerating(false);
     }
   }
 
+  // ✅ Rename folder with prompt
+  async function handleRename() {
+    if (!folder) return;
+    Prompt(
+      'Rename Folder',
+      'Enter a new name for this folder:',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'OK',
+          onPress: async (newTitle) => {
+            if (!newTitle || !newTitle.trim()) return;
+            try {
+              const updated = await updateFolder(folder.id, {
+                title: newTitle,
+                description: folder.description,
+                prompt: folder.description || '',
+              });
+              setFolder(updated);
+              Alert.alert('✅ Success', 'Folder renamed');
+            } catch (e) {
+              console.log('❌ rename error', e);
+              Alert.alert('Error', 'Could not rename folder');
+            }
+          },
+        },
+      ],
+      { defaultValue: folder.title }
+    );
+  }
+
+  // ✅ Delete folder
+  async function handleDelete() {
+    if (!folder) return;
+    Alert.alert('Confirm Delete', 'Are you sure you want to delete this folder?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteFolder(folder.id);
+            Alert.alert('Deleted', 'Folder removed');
+            navigation.goBack(); // go back to Dashboard
+          } catch (e) {
+            console.log('❌ delete error', e);
+            Alert.alert('Error', 'Could not delete folder');
+          }
+        },
+      },
+    ]);
+  }
+
   // ✅ Callback: mark game as played locally (immediate feedback)
   function markGameAsPlayedLocally(gameId: string) {
-    setPlayedGameIds((prev) =>
-      prev.includes(gameId) ? prev : [...prev, gameId]
-    );
+    setPlayedGameIds((prev) => (prev.includes(gameId) ? prev : [...prev, gameId]));
   }
 
   if (loading) return <View style={styles.center}><ActivityIndicator /></View>;
@@ -71,10 +144,20 @@ export default function FolderScreen() {
       <Text style={styles.title}>{folder.title}</Text>
       {folder.description && <Text style={styles.subtitle}>{folder.description}</Text>}
 
+      {/* Rename & Delete actions */}
+      <View style={styles.actions}>
+        <TouchableOpacity style={styles.renameBtn} onPress={handleRename}>
+          <Text style={styles.actionText}>✏️ Rename</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+          <Text style={styles.actionText}>🗑️ Delete</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Generate more games button */}
       <TouchableOpacity style={styles.generateBtn} onPress={handleGenerate} disabled={generating}>
         <Text style={styles.generateText}>
-          {generating ? "⏳ Generating..." : "➕ Generate More Games"}
+          {generating ? '⏳ Generating...' : '➕ Generate More Games'}
         </Text>
       </TouchableOpacity>
 
@@ -86,7 +169,7 @@ export default function FolderScreen() {
           <TouchableOpacity
             style={[
               styles.card,
-              playedGameIds.includes(item.id) && { backgroundColor: '#e5e7eb' }
+              playedGameIds.includes(item.id) && { backgroundColor: '#e5e7eb' },
             ]}
             onPress={() =>
               navigation.navigate('GameScreen', {
@@ -95,7 +178,7 @@ export default function FolderScreen() {
                 games,
                 currentIndex: index,
                 onPlayed: markGameAsPlayedLocally, // ✅ pass callback
-              } as any) // 👈 casting to any so we can add callback param
+              } as any)
             }
           >
             <Text style={{ fontWeight: '600' }}>{item.title}</Text>
@@ -127,4 +210,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   generateText: { color: 'white', fontWeight: '700' },
+  actions: { flexDirection: 'row', marginBottom: 12 },
+  renameBtn: {
+    backgroundColor: '#3b82f6',
+    padding: 10,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  deleteBtn: {
+    backgroundColor: '#ef4444',
+    padding: 10,
+    borderRadius: 8,
+  },
+  actionText: { color: 'white', fontWeight: '700' },
 });
