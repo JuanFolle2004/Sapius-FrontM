@@ -33,22 +33,11 @@ export async function createFolder(payload: {
   return data;
 }
 
-// ✅ Create folder + generate games
-export async function createFolderWithGames(payload: {
-  prompt: string;
-  duration: number; // must be 5, 10, or 15
-  title?: string;
-  description?: string;
-}): Promise<{ folder: Folder; games: Game[] }> {
-  const { data } = await api.post<{ folder: Folder; games: Game[] }>(
-    '/folders/with-games',
-    payload
-  );
-  return data;
-}
-
 // Generate more games for existing folder
-export async function generateGamesForFolder(folderId: string, duration: number = 5) {
+export async function generateGamesForFolder(
+  folderId: string,
+  duration: number = 5
+) {
   const { data } = await api.post<Game[]>(
     `/ai/generate-from-folder/${folderId}`,
     { duration }
@@ -72,11 +61,11 @@ export async function updateFolder(
   folderId: string,
   updates: { title?: string; description?: string; prompt?: string }
 ): Promise<Folder> {
-  const { data } = await api.put<Folder>(`/folders/${folderId}`, updates);
+  const { data } = await api.put<Folder>(`/folders/update/${folderId}`, updates);
   return data;
 }
 
 // Delete folder
 export async function deleteFolder(folderId: string): Promise<void> {
-  await api.delete(`/folders/${folderId}`);
+  await api.delete(`/folders/delete/${folderId}`);
 }

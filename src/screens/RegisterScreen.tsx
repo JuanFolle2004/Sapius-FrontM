@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, RegisterRequest } from '../types';
@@ -28,10 +29,12 @@ export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [lastname, setLastname] = useState('');
   const [phone, setPhone] = useState('');
-  const [birthDate, setBirthDate] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  // 👇 estado para errores por campo
+  // Birth date
+  const [birthDate, setBirthDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const inputStyle = (field: string) => [
@@ -40,38 +43,39 @@ export default function RegisterScreen() {
   ];
 
   const onSubmit = async () => {
-    // limpiamos errores previos
     setErrors({});
+
+    if (!birthDate) {
+      setErrors({ birthDate: 'Please select your birth date' });
+      return;
+    }
+
+    // format as YYYY-MM-DD for backend
+    const formattedBirthDate = birthDate.toISOString().split('T')[0];
 
     const payload: RegisterRequest = {
       email,
       password,
       name,
-      lastname,    // 👈 mismo nombre que backend
+      lastname,
       phone,
-      birthDate,
+      birthDate: formattedBirthDate,
       interests: [],
     };
 
     try {
       setLoading(true);
 
-      // 1) register
       await register(payload);
 
-      // 2) auto-login
       const { access_token } = await login(email, password);
       await setToken(access_token);
 
-      // 3) perfil
       const profile = await getMe(access_token);
       setUser(profile);
 
-      // 4) (opcional) ir al dashboard
       // navigation.navigate('Dashboard');
-
     } catch (e: any) {
-      // Backend normalizado => { errors: [{ field, message }, ...] }
       if (e?.response?.data?.errors) {
         const mapped: Record<string, string> = {};
         (e.response.data.errors as Array<any>).forEach((err) => {
@@ -79,7 +83,6 @@ export default function RegisterScreen() {
         });
         setErrors(mapped);
       } else {
-        // fallback
         setErrors({ general: e?.message || 'Registration failed' });
       }
     } finally {
@@ -140,13 +143,34 @@ export default function RegisterScreen() {
           />
           {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
 
-          <TextInput
-            style={inputStyle('birthDate')}
-            placeholder="Birth date (YYYY-MM-DD)"
-            value={birthDate}
-            onChangeText={setBirthDate}
-          />
-          {errors.birthDate && <Text style={styles.errorText}>{errors.birthDate}</Text>}
+          {/* Birth date */}
+          <Text style={styles.label}>Birth date</Text>
+          <TouchableOpacity
+            style={[styles.input, { justifyContent: 'center' }]}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Text>
+              {birthDate ? birthDate.toDateString() : 'Select birth date'}
+            </Text>
+          </TouchableOpacity>
+          {errors.birthDate && (
+            <Text style={styles.errorText}>{errors.birthDate}</Text>
+          )}
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={birthDate || new Date(2000, 0, 1)} // default date if none chosen
+              mode="date"
+              display="spinner" // "default" | "spinner" | "calendar" (iOS/Android differ)
+              maximumDate={new Date()} // cannot pick future dates
+              onChange={(event, selectedDate) => {
+                setShowDatePicker(false);
+                if (selectedDate) {
+                  setBirthDate(selectedDate);
+                }
+              }}
+            />
+          )}
 
           {errors.general && <Text style={styles.errorText}>{errors.general}</Text>}
 
@@ -178,8 +202,9 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, justifyContent: 'center' },
   form: { padding: 16, gap: 12 },
   title: { fontSize: 22, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
+  label: { fontWeight: '600', marginBottom: 4 },
   input: { borderWidth: 1, borderRadius: 10, padding: 12 },
-  inputErrorBorder: { borderColor: '#ef4444' }, // rojo si hay error
+  inputErrorBorder: { borderColor: '#ef4444' },
   button: {
     backgroundColor: '#14b8a6',
     paddingVertical: 14,

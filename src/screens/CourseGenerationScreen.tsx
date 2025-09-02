@@ -11,7 +11,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
-import { createFolderWithGames } from '../services/folderService';
+import { createFolder } from '../services/folderService';
+import { generateGamesForFolder } from '../services/folderService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'CourseGeneration'>;
 
@@ -20,7 +21,7 @@ export default function CourseGenerationScreen() {
 
   const [topic, setTopic] = useState('');
   const [difficulty, setDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
-  const [duration, setDuration] = useState<'5' | '10' | '15'>('5'); // only valid values
+  const [duration, setDuration] = useState<'5' | '10' | '15'>('5'); // valid values
   const [loading, setLoading] = useState(false);
 
   useLayoutEffect(() => {
@@ -31,12 +32,17 @@ export default function CourseGenerationScreen() {
     if (!topic.trim()) return;
     setLoading(true);
     try {
-      const { folder } = await createFolderWithGames({
+      // 1️⃣ Create the folder
+      const folder = await createFolder({
         title: topic,
         description: `AI-generated course on ${topic}`,
         prompt: topic,
-        duration: parseInt(duration, 10),
       });
+
+      // 2️⃣ Generate games for the new folder
+      await generateGamesForFolder(folder.id, parseInt(duration, 10));
+
+      // 3️⃣ Navigate to Folder screen
       navigation.replace('FolderScreen', { folderId: folder.id });
     } catch (e: any) {
       console.log('generate error', e?.response?.data || e?.message);
