@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, Game } from '../types';
-import { getGameById, markGamePlayed } from '../services/gameService';
+import { getGameById, markGamePlayed, reportGameIssue } from '../services/gameService';
 
 type Route = RouteProp<RootStackParamList, 'GameScreen'>;
 type Nav = NativeStackNavigationProp<RootStackParamList, 'GameScreen'>;
@@ -12,11 +12,18 @@ export default function GameScreen() {
   const { params } = useRoute<Route>();
   const navigation = useNavigation<Nav>();
 
-  const { gameId, folderId, games, currentIndex, onPlayed } = params as any;
+  const { gameId, folderId, games, currentIndex, onPlayed } = params as {
+    gameId: string;
+    folderId: string;
+    games: Game[];
+    currentIndex: number;
+    onPlayed: (gameId: string, isCorrect: boolean) => void;
+  };
 
   const [game, setGame] = useState<Game | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
 
+  // 🔹 Load game
   useEffect(() => {
     (async () => {
       const data = await getGameById(gameId);
@@ -24,29 +31,57 @@ export default function GameScreen() {
     })();
   }, [gameId]);
 
-  // ✅ mark game as played once answered
+  // 🔹 When answered, record progress
   useEffect(() => {
     if (selected && game) {
-      markGamePlayed(game.id).catch(e =>
+      const isCorrect = selected === game.correctAnswer;
+
+      // ✅ call backend
+      markGamePlayed(folderId, game.id, isCorrect).catch(e =>
         console.log("❌ mark played error", e)
       );
-      if (onPlayed) onPlayed(game.id); // ✅ callback to FolderScreen
+
+      // ✅ notify FolderScreen
+      if (onPlayed) onPlayed(game.id, isCorrect);
+
+      // ✅ mark as played locally
+      const idx = games.findIndex((g) => g.id === game.id);
+      if (idx !== -1) {
+        games[idx].played = true;
+      }
     }
   }, [selected, game]);
 
   if (!game) return <Text>Loading...</Text>;
 
+  // 🔹 Move to next *unplayed* game or back to folder
   const goNext = () => {
-    if (currentIndex + 1 < games.length) {
+    const nextGame = games.find((g, idx) => idx > currentIndex && !g.played);
+
+    if (nextGame) {
       navigation.replace('GameScreen', {
-        gameId: games[currentIndex + 1].id,
+        gameId: nextGame.id,
         folderId,
         games,
-        currentIndex: currentIndex + 1,
-        onPlayed, // pass down callback
+        currentIndex: games.findIndex((g) => g.id === nextGame.id),
+        onPlayed,
       } as any);
     } else {
-      navigation.goBack(); // back to folder when finished
+      navigation.goBack(); // all done
+    }
+  };
+
+  // 🔹 Report incorrect answer
+  const handleReport = async () => {
+    try {
+      await reportGameIssue(folderId, game.id, {
+        selectedAnswer: selected,
+        correctAnswer: game.correctAnswer,
+        question: game.question,
+      });
+      Alert.alert("✅ Thank you", "Your feedback was submitted.");
+    } catch (err) {
+      Alert.alert("❌ Error", "Could not submit feedback.");
     }
   };
 
@@ -55,38 +90,46 @@ export default function GameScreen() {
       <Text style={styles.question}>{game.question}</Text>
 
       {game.options.map((opt) => {
-  const isCorrect = opt === game.correctAnswer;
-  const isSelected = opt === selected;
+        const isCorrect = opt === game.correctAnswer;
+        const isSelected = opt === selected;
 
-  const optionStyle = [
-    styles.option,
-    selected && isSelected && isCorrect && styles.correct,
-    selected && isSelected && !isCorrect && styles.incorrect,
-    selected && !isSelected && isCorrect && styles.correct,
-  ];
+        const optionStyle = [
+          styles.option,
+          selected && isSelected && isCorrect && styles.correct,
+          selected && isSelected && !isCorrect && styles.incorrect,
+          selected && !isSelected && isCorrect && styles.correct,
+        ];
 
-  return (
-    <TouchableOpacity
-      key={opt}
-      style={optionStyle}
-      onPress={() => {
-        if (selected) return; // prevent multiple answers
-        setSelected(opt);
-      }}
-    >
-      <Text>{opt}</Text>
-    </TouchableOpacity>
-  );
-})}
-
+        return (
+          <TouchableOpacity
+            key={opt}
+            style={optionStyle}
+            onPress={() => {
+              if (selected) return; // prevent multiple answers
+              setSelected(opt);
+            }}
+          >
+            <Text>{opt}</Text>
+          </TouchableOpacity>
+        );
+      })}
 
       {selected && (
         <>
           <Text style={styles.explanation}>💡 {game.explanation}</Text>
+
+          {/* 🔹 Next Question / Finish */}
           <TouchableOpacity style={styles.nextBtn} onPress={goNext}>
             <Text style={styles.nextText}>
-              {currentIndex + 1 < games.length ? "➡️ Next Question" : "🏁 Finish"}
+              {games.some((g, idx) => idx > currentIndex && !g.played)
+                ? "➡️ Next Question"
+                : "🏁 Finish"}
             </Text>
+          </TouchableOpacity>
+
+          {/* 🔹 Report Issue */}
+          <TouchableOpacity style={styles.reportBtn} onPress={handleReport}>
+            <Text style={styles.reportText}>⚠️ Report Issue</Text>
           </TouchableOpacity>
         </>
       )}
@@ -124,4 +167,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nextText: { color: 'white', fontWeight: '700' },
+  reportBtn: {
+    marginTop: 12,
+    backgroundColor: '#ef4444',
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  reportText: { color: 'white', fontWeight: '700' },
 });

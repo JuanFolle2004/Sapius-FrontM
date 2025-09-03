@@ -36,14 +36,19 @@ export async function createFolder(payload: {
 // Generate more games for existing folder
 export async function generateGamesForFolder(
   folderId: string,
-  duration: number = 5
+  duration: number = 5,
+  difficulty: "same" | "easier" | "harder" = "same"
 ) {
-  const { data } = await api.post<Game[]>(
-    `/ai/generate-from-folder/${folderId}`,
-    { duration }
-  );
+  const { data } = await api.post(`/ai/generate-from-folder/${folderId}`, {
+    duration: Number(duration),   // ✅ force numeric
+    difficulty,
+  });
   return data;
 }
+
+
+
+
 
 // Get random folder with games
 export async function getRandomFolderWithGames(): Promise<{

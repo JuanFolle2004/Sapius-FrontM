@@ -47,6 +47,7 @@ export interface Game {
   folderId?: string;   // can be "random"
   topic?: string;
   tags: string[];
+  played?: boolean; // 👈 added
 }
 
 export type RootStackParamList = {

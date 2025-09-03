@@ -17,14 +17,17 @@ import {
   updateFolder,
   deleteFolder,
 } from '../services/folderService';
-import { getMe } from '../services/userService';
+import { getFolderProgress, FolderProgress } from '../services/gameService';
 import { useUser } from '../context/UserContext';
-
-// ✅ For rename input
 import Prompt from 'react-native-prompt-android';
+import { ActionSheetIOS, Platform } from 'react-native';
 
 type Route = RouteProp<RootStackParamList, 'FolderScreen'>;
 type Nav = NativeStackNavigationProp<RootStackParamList, 'FolderScreen'>;
+
+type GameProgress = {
+  [gameId: string]: { correct: boolean; answeredAt: string };
+};
 
 export default function FolderScreen() {
   const { params } = useRoute<Route>();
@@ -35,18 +38,26 @@ export default function FolderScreen() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [playedGameIds, setPlayedGameIds] = useState<string[]>([]);
+  const [progress, setProgress] = useState<GameProgress>({});
 
-  // fetch folder and user played games
+  // 🔹 Fetch folder + progress
   async function fetchFolder() {
     if (!token || !params?.folderId) return;
     try {
       const data = await getFolderWithGames(params.folderId);
       setFolder(data.folder);
-      setGames(data.games);
 
-      const user = await getMe(token);
-      setPlayedGameIds(user.playedGameIds || []);
+      const prog: FolderProgress = await getFolderProgress(params.folderId);
+      console.log("📊 Progress fetched:", prog);
+
+      setProgress(prog.playedGames || {});
+
+      // merge `played` flag into games
+      const gamesWithProgress = data.games.map((g: Game) => ({
+        ...g,
+        played: !!prog.playedGames?.[g.id],
+      }));
+      setGames(gamesWithProgress);
     } catch (e) {
       console.log('❌ folder fetch error', e);
     } finally {
@@ -54,20 +65,20 @@ export default function FolderScreen() {
     }
   }
 
-  // 👇 Refetch whenever screen is focused
+  // 🔹 Refetch on screen focus
   useFocusEffect(
     useCallback(() => {
       fetchFolder();
     }, [token, params?.folderId])
   );
 
-  // generate new games
-  async function handleGenerate() {
+  // 🔹 Generate games
+  async function handleGenerate(difficulty: "same" | "easier" | "harder") {
     if (!folder) return;
     setGenerating(true);
     try {
-      await generateGamesForFolder(folder.id);
-      await fetchFolder(); // refresh after generation
+      await generateGamesForFolder(folder.id, 5, difficulty);
+      await fetchFolder();
     } catch (e) {
       console.log('❌ generate games error', e);
     } finally {
@@ -75,17 +86,41 @@ export default function FolderScreen() {
     }
   }
 
-  // ✅ Rename folder with prompt
+  function showGenerateOptions() {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Cancel", "Same Difficulty", "Easier", "Harder"],
+          cancelButtonIndex: 0,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) handleGenerate("same");
+          if (buttonIndex === 2) handleGenerate("easier");
+          if (buttonIndex === 3) handleGenerate("harder");
+        }
+      );
+    } else {
+      Alert.alert(
+        "Generate More Games",
+        "Choose difficulty:",
+        [
+          { text: "Same Difficulty", onPress: () => handleGenerate("same") },
+          { text: "Easier", onPress: () => handleGenerate("easier") },
+          { text: "Harder", onPress: () => handleGenerate("harder") },
+          { text: "Cancel", style: "cancel" },
+        ]
+      );
+    }
+  }
+
+  // 🔹 Rename folder
   async function handleRename() {
     if (!folder) return;
     Prompt(
       'Rename Folder',
       'Enter a new name for this folder:',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'OK',
           onPress: async (newTitle) => {
@@ -109,7 +144,7 @@ export default function FolderScreen() {
     );
   }
 
-  // ✅ Delete folder
+  // 🔹 Delete folder
   async function handleDelete() {
     if (!folder) return;
     Alert.alert('Confirm Delete', 'Are you sure you want to delete this folder?', [
@@ -121,7 +156,7 @@ export default function FolderScreen() {
           try {
             await deleteFolder(folder.id);
             Alert.alert('Deleted', 'Folder removed');
-            navigation.goBack(); // go back to Dashboard
+            navigation.goBack();
           } catch (e) {
             console.log('❌ delete error', e);
             Alert.alert('Error', 'Could not delete folder');
@@ -131,10 +166,26 @@ export default function FolderScreen() {
     ]);
   }
 
-  // ✅ Callback: mark game as played locally (immediate feedback)
-  function markGameAsPlayedLocally(gameId: string) {
-    setPlayedGameIds((prev) => (prev.includes(gameId) ? prev : [...prev, gameId]));
+  // 🔹 Callback from GameScreen
+  function markGameAsPlayedLocally(gameId: string, correct: boolean) {
+    setProgress((prev) => ({
+      ...prev,
+      [gameId]: { correct, answeredAt: new Date().toISOString() },
+    }));
+
+    // also update local games with played = true
+    setGames((prev) =>
+      prev.map((g) => (g.id === gameId ? { ...g, played: true } : g))
+    );
   }
+
+  // 🔹 Progress stats
+  const totalPlayed = Object.keys(progress).length;
+  const correctCount = Object.values(progress).filter((p) => p.correct).length;
+  const percentage = totalPlayed > 0 ? Math.round((correctCount / totalPlayed) * 100) : 0;
+
+  const unplayed = games.filter((g) => !g.played);
+  const played = games.filter((g) => g.played);
 
   if (loading) return <View style={styles.center}><ActivityIndicator /></View>;
   if (!folder) return <View style={styles.center}><Text>Folder not found</Text></View>;
@@ -144,7 +195,17 @@ export default function FolderScreen() {
       <Text style={styles.title}>{folder.title}</Text>
       {folder.description && <Text style={styles.subtitle}>{folder.description}</Text>}
 
-      {/* Rename & Delete actions */}
+      {/* 🔹 Folder progress */}
+      <View style={{ marginVertical: 12 }}>
+        <Text style={{ fontWeight: '600' }}>
+          Progress: {correctCount}/{totalPlayed} ({percentage}%)
+        </Text>
+        <View style={styles.progressBarBackground}>
+          <View style={[styles.progressBarFill, { width: `${percentage}%` }]} />
+        </View>
+      </View>
+
+      {/* 🔹 Rename & Delete */}
       <View style={styles.actions}>
         <TouchableOpacity style={styles.renameBtn} onPress={handleRename}>
           <Text style={styles.actionText}>✏️ Rename</Text>
@@ -154,38 +215,72 @@ export default function FolderScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Generate more games button */}
-      <TouchableOpacity style={styles.generateBtn} onPress={handleGenerate} disabled={generating}>
+      {/* 🔹 Generate more games */}
+      <TouchableOpacity style={styles.generateBtn} onPress={showGenerateOptions} disabled={generating}>
         <Text style={styles.generateText}>
           {generating ? '⏳ Generating...' : '➕ Generate More Games'}
         </Text>
       </TouchableOpacity>
 
       <Text style={styles.subtitle}>Games</Text>
+
+      {/* 🔹 Unplayed */}
       <FlatList
-        data={games}
+        data={unplayed}
         keyExtractor={(g) => g.id}
         renderItem={({ item, index }) => (
           <TouchableOpacity
-            style={[
-              styles.card,
-              playedGameIds.includes(item.id) && { backgroundColor: '#e5e7eb' },
-            ]}
+            style={styles.card}
             onPress={() =>
               navigation.navigate('GameScreen', {
                 gameId: item.id,
                 folderId: folder.id,
                 games,
-                currentIndex: index,
-                onPlayed: markGameAsPlayedLocally, // ✅ pass callback
+                currentIndex: games.findIndex((x) => x.id === item.id),
+                onPlayed: markGameAsPlayedLocally,
               } as any)
             }
           >
-            <Text style={{ fontWeight: '600' }}>{item.title}</Text>
+            <Text style={{ fontWeight: '600' }}>{item.title || `Game ${index + 1}`}</Text>
             <Text numberOfLines={2}>{item.question}</Text>
           </TouchableOpacity>
         )}
-        ListEmptyComponent={<Text>No games in this folder yet.</Text>}
+        ListEmptyComponent={<Text>🎉 All games played!</Text>}
+      />
+
+      {/* 🔹 Played */}
+      {played.length > 0 && <Text style={styles.subtitle}>Played Games</Text>}
+
+      <FlatList
+        data={played}
+        keyExtractor={(g) => g.id}
+        renderItem={({ item }) => {
+          const result = progress[item.id];
+          return (
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: '#f3f4f6' }]}
+              onPress={() =>
+                navigation.navigate('GameScreen', {
+                  gameId: item.id,
+                  folderId: folder.id,
+                  games,
+                  currentIndex: games.findIndex((x) => x.id === item.id),
+                  onPlayed: markGameAsPlayedLocally,
+                } as any)
+              }
+            >
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <View>
+                  <Text style={{ fontWeight: '600' }}>{item.title || 'Game'}</Text>
+                  <Text numberOfLines={2}>{item.question}</Text>
+                </View>
+                <Text style={{ fontSize: 22 }}>
+                  {result?.correct ? '✅' : '❌'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
       />
     </View>
   );
@@ -195,12 +290,13 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   container: { flex: 1, padding: 16 },
   title: { fontSize: 22, fontWeight: '700', marginBottom: 8 },
-  subtitle: { fontSize: 16, marginBottom: 12, color: '#555' },
+  subtitle: { fontSize: 16, marginVertical: 8, color: '#555' },
   card: {
     padding: 14,
     borderWidth: 1,
     borderRadius: 12,
     marginBottom: 10,
+    borderColor: '#ddd',
   },
   generateBtn: {
     backgroundColor: '#14b8a6',
@@ -223,4 +319,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   actionText: { color: 'white', fontWeight: '700' },
+  progressBarBackground: {
+    width: '100%',
+    height: 8,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 4,
+    marginTop: 4,
+  },
+  progressBarFill: {
+    height: 8,
+    backgroundColor: '#14b8a6',
+    borderRadius: 4,
+  },
 });
