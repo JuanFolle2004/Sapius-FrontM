@@ -1,0 +1,56 @@
+{
+  "common": {
+    "logout": "Logout",
+    "user": "User",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "ok": "OK",
+    "error": "Error",
+    "loading": "Loading...",
+    "language": "Language",
+    "english": "English",
+    "spanish": "Spanish",
+    "options": "Options"
+  },
+  "dashboard": {
+    "welcome": "Welcome, {{name}}!",
+    "newAIFolder": "New AI Folder",
+    "randomTrivia": "Random Trivia",
+    "noGames": "No games available",
+    "randomTriviaError": "Could not load random trivia.",
+    "noFolders": "No folders yet."
+  },
+  "folder": {
+    "renameTitle": "Rename Folder",
+    "renamePrompt": "Enter a new name for this folder:",
+    "renameSuccess": "Folder renamed",
+    "renameError": "Could not rename folder",
+    "confirmDelete": "Confirm Delete",
+    "confirmDeleteMessage": "Are you sure you want to delete this folder?",
+    "deleted": "Deleted",
+    "deleteSuccess": "Folder removed",
+    "deleteError": "Could not delete folder",
+    "generateMore": "Generate More Games",
+    "chooseDifficulty": "Choose difficulty:",
+    "sameDifficulty": "Same Difficulty",
+    "easier": "Easier",
+    "harder": "Harder",
+    "allPlayed": "All games played!",
+    "played": "Played Games",
+    "games": "Games",
+    "rename": "Rename"
+  },
+  "game": {
+    "thankYou": "Thank you",
+    "feedbackSubmitted": "Your feedback was submitted.",
+    "feedbackError": "Could not submit feedback.",
+    "next": "Next Question",
+    "finish": "Finish",
+    "reportIssue": "Report Issue",
+    "explanationPrefix": "Explanation:",
+    "loading": "Loading..."
+  },
+  "errors": {
+    "folderNotFound": "Folder not found"
+  }
+}

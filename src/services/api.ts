@@ -2,7 +2,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://192.168.1.25:8000', // adjust to your backend IP
+  baseURL: 'http://10.252.49.172:8000', // adjust to your backend IP
+  timeout: 15000,
 });
 
 export const setAuthToken = (token: string | null) => {

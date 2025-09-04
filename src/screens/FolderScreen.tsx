@@ -21,6 +21,7 @@ import { getFolderProgress, FolderProgress } from '../services/gameService';
 import { useUser } from '../context/UserContext';
 import Prompt from 'react-native-prompt-android';
 import { ActionSheetIOS, Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 type Route = RouteProp<RootStackParamList, 'FolderScreen'>;
 type Nav = NativeStackNavigationProp<RootStackParamList, 'FolderScreen'>;
@@ -33,6 +34,7 @@ export default function FolderScreen() {
   const { params } = useRoute<Route>();
   const navigation = useNavigation<Nav>();
   const { token } = useUser()!;
+  const { t } = useTranslation();
 
   const [folder, setFolder] = useState<Folder | null>(null);
   const [games, setGames] = useState<Game[]>([]);
@@ -90,7 +92,12 @@ export default function FolderScreen() {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ["Cancel", "Same Difficulty", "Easier", "Harder"],
+          options: [
+            t('common.cancel'),
+            t('folder.sameDifficulty'),
+            t('folder.easier'),
+            t('folder.harder'),
+          ],
           cancelButtonIndex: 0,
         },
         (buttonIndex) => {
@@ -101,13 +108,13 @@ export default function FolderScreen() {
       );
     } else {
       Alert.alert(
-        "Generate More Games",
-        "Choose difficulty:",
+        t('folder.generateMore'),
+        t('folder.chooseDifficulty'),
         [
-          { text: "Same Difficulty", onPress: () => handleGenerate("same") },
-          { text: "Easier", onPress: () => handleGenerate("easier") },
-          { text: "Harder", onPress: () => handleGenerate("harder") },
-          { text: "Cancel", style: "cancel" },
+          { text: t('folder.sameDifficulty'), onPress: () => handleGenerate("same") },
+          { text: t('folder.easier'), onPress: () => handleGenerate("easier") },
+          { text: t('folder.harder'), onPress: () => handleGenerate("harder") },
+          { text: t('common.cancel'), style: "cancel" },
         ]
       );
     }
@@ -117,12 +124,12 @@ export default function FolderScreen() {
   async function handleRename() {
     if (!folder) return;
     Prompt(
-      'Rename Folder',
-      'Enter a new name for this folder:',
+      t('folder.renameTitle'),
+      t('folder.renamePrompt'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'OK',
+          text: t('common.ok'),
           onPress: async (newTitle) => {
             if (!newTitle || !newTitle.trim()) return;
             try {
@@ -132,10 +139,10 @@ export default function FolderScreen() {
                 prompt: folder.description || '',
               });
               setFolder(updated);
-              Alert.alert('✅ Success', 'Folder renamed');
+              Alert.alert(t('folder.renameSuccess'));
             } catch (e) {
               console.log('❌ rename error', e);
-              Alert.alert('Error', 'Could not rename folder');
+              Alert.alert(t('common.error'), t('folder.renameError'));
             }
           },
         },
@@ -148,18 +155,18 @@ export default function FolderScreen() {
   async function handleDelete() {
     if (!folder) return;
     Alert.alert('Confirm Delete', 'Are you sure you want to delete this folder?', [
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
             await deleteFolder(folder.id);
-            Alert.alert('Deleted', 'Folder removed');
+            Alert.alert(t('folder.deleted'), t('folder.deleteSuccess'));
             navigation.goBack();
           } catch (e) {
             console.log('❌ delete error', e);
-            Alert.alert('Error', 'Could not delete folder');
+            Alert.alert(t('common.error'), t('folder.deleteError'));
           }
         },
       },
@@ -188,7 +195,7 @@ export default function FolderScreen() {
   const played = games.filter((g) => g.played);
 
   if (loading) return <View style={styles.center}><ActivityIndicator /></View>;
-  if (!folder) return <View style={styles.center}><Text>Folder not found</Text></View>;
+  if (!folder) return <View style={styles.center}><Text>{t('errors.folderNotFound')}</Text></View>;
 
   return (
     <View style={styles.container}>
@@ -208,21 +215,21 @@ export default function FolderScreen() {
       {/* 🔹 Rename & Delete */}
       <View style={styles.actions}>
         <TouchableOpacity style={styles.renameBtn} onPress={handleRename}>
-          <Text style={styles.actionText}>✏️ Rename</Text>
+          <Text style={styles.actionText}>✏️ {t('folder.rename')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
-          <Text style={styles.actionText}>🗑️ Delete</Text>
+          <Text style={styles.actionText}>🗑️ {t('common.delete')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* 🔹 Generate more games */}
       <TouchableOpacity style={styles.generateBtn} onPress={showGenerateOptions} disabled={generating}>
         <Text style={styles.generateText}>
-          {generating ? '⏳ Generating...' : '➕ Generate More Games'}
+          {generating ? '⏳ Generating...' : t('folder.generateMore')}
         </Text>
       </TouchableOpacity>
 
-      <Text style={styles.subtitle}>Games</Text>
+      <Text style={styles.subtitle}>{t('folder.games')}</Text>
 
       {/* 🔹 Unplayed */}
       <FlatList
@@ -245,11 +252,11 @@ export default function FolderScreen() {
             <Text numberOfLines={2}>{item.question}</Text>
           </TouchableOpacity>
         )}
-        ListEmptyComponent={<Text>🎉 All games played!</Text>}
+        ListEmptyComponent={<Text>🎉 {t('folder.allPlayed')}</Text>}
       />
 
       {/* 🔹 Played */}
-      {played.length > 0 && <Text style={styles.subtitle}>Played Games</Text>}
+      {played.length > 0 && <Text style={styles.subtitle}>{t('folder.played')}</Text>}
 
       <FlatList
         data={played}

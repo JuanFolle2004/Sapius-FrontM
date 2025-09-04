@@ -63,9 +63,11 @@ export const UserProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
           setUser(profile);
         } catch (e) {
           console.log("⚠️ Failed to fetch profile, clearing token", e);
-          await AsyncStorage.removeItem('token');
-          setTokenState('');
-          setUser(null);
+          if ((e as any)?.response?.status === 401) {
+            await AsyncStorage.removeItem('token');
+            setTokenState('');
+            setUser(null);
+          }
         }
       }
       setIsLoading(false);

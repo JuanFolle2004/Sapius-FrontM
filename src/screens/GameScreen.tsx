@@ -4,6 +4,7 @@ import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, Game } from '../types';
 import { getGameById, markGamePlayed, reportGameIssue } from '../services/gameService';
+import { useTranslation } from 'react-i18next';
 
 type Route = RouteProp<RootStackParamList, 'GameScreen'>;
 type Nav = NativeStackNavigationProp<RootStackParamList, 'GameScreen'>;
@@ -11,6 +12,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'GameScreen'>;
 export default function GameScreen() {
   const { params } = useRoute<Route>();
   const navigation = useNavigation<Nav>();
+  const { t } = useTranslation();
 
   const { gameId, folderId, games, currentIndex, onPlayed } = params as {
     gameId: string;
@@ -52,7 +54,7 @@ export default function GameScreen() {
     }
   }, [selected, game]);
 
-  if (!game) return <Text>Loading...</Text>;
+  if (!game) return <Text>{t('game.loading')}</Text>;
 
   // 🔹 Move to next *unplayed* game or back to folder
   const goNext = () => {
@@ -79,9 +81,9 @@ export default function GameScreen() {
         correctAnswer: game.correctAnswer,
         question: game.question,
       });
-      Alert.alert("✅ Thank you", "Your feedback was submitted.");
+      Alert.alert(t('game.thankYou'), t('game.feedbackSubmitted'));
     } catch (err) {
-      Alert.alert("❌ Error", "Could not submit feedback.");
+      Alert.alert(t('common.error'), t('game.feedbackError'));
     }
   };
 
@@ -116,20 +118,20 @@ export default function GameScreen() {
 
       {selected && (
         <>
-          <Text style={styles.explanation}>💡 {game.explanation}</Text>
+          <Text style={styles.explanation}>{t('game.explanationPrefix')} {game.explanation}</Text>
 
           {/* 🔹 Next Question / Finish */}
           <TouchableOpacity style={styles.nextBtn} onPress={goNext}>
             <Text style={styles.nextText}>
               {games.some((g, idx) => idx > currentIndex && !g.played)
-                ? "➡️ Next Question"
-                : "🏁 Finish"}
+                ? t('game.next')
+                : t('game.finish')}
             </Text>
           </TouchableOpacity>
 
           {/* 🔹 Report Issue */}
           <TouchableOpacity style={styles.reportBtn} onPress={handleReport}>
-            <Text style={styles.reportText}>⚠️ Report Issue</Text>
+            <Text style={styles.reportText}>⚠️ {t('game.reportIssue')}</Text>
           </TouchableOpacity>
         </>
       )}

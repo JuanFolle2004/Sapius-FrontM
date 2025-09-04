@@ -17,17 +17,72 @@ import { useUser } from '../context/UserContext';
 import { getDashboard } from '../services/dashboardService';
 import { getRandomFolderWithGames } from '../services/folderService';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
+import { ActionSheetIOS, Platform } from 'react-native';
+import { setLanguage } from '../i18n';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 
 export default function DashboardScreen() {
   const navigation = useNavigation<Nav>();
   const { logout, token, setUser, user } = useUser();
+  const { t, i18n } = useTranslation();
 
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
 
   // 👇 Configure header (life + logout)
+  const showLanguageChooser = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: [t('common.cancel'), t('common.english'), t('common.spanish')],
+          cancelButtonIndex: 0,
+        },
+        (idx) => {
+          if (idx === 1) setLanguage('en');
+          if (idx === 2) setLanguage('es');
+        }
+      );
+    } else {
+      Alert.alert(
+        t('common.language'),
+        '',
+        [
+          { text: t('common.english'), onPress: () => setLanguage('en') },
+          { text: t('common.spanish'), onPress: () => setLanguage('es') },
+          { text: t('common.cancel'), style: 'cancel' },
+        ]
+      );
+    }
+  };
+
+  const showMenu = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: [t('common.cancel'), t('common.language'), t('common.logout')],
+          cancelButtonIndex: 0,
+        },
+        (idx) => {
+          if (idx === 1) showLanguageChooser();
+          if (idx === 2) logout();
+        }
+      );
+    } else {
+      Alert.alert(
+        t('common.options'),
+        '',
+        [
+          { text: t('common.language'), onPress: showLanguageChooser },
+          { text: t('common.logout'), onPress: logout },
+          { text: t('common.cancel'), style: 'cancel' },
+        ]
+      );
+    }
+  };
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
@@ -38,11 +93,15 @@ export default function DashboardScreen() {
           <Text style={styles.lifeText}>5/5</Text>
         </View>
       ),
-      headerRight: () => <Button title="Logout" onPress={logout} />,
+      headerRight: () => (
+        <TouchableOpacity onPress={showMenu} style={{ paddingHorizontal: 8 }}>
+          <Ionicons name="ellipsis-vertical" size={22} color="#111827" />
+        </TouchableOpacity>
+      ),
       headerBackVisible: false,
       gestureEnabled: false,
     });
-  }, [navigation, logout]);
+  }, [navigation, logout, i18n.language, t]);
 
   // 👇 Fetch dashboard data
   async function fetchDashboard() {
@@ -103,19 +162,21 @@ export default function DashboardScreen() {
         style={styles.logo}
       />
 
-      <Text style={styles.welcome}>Welcome, {user?.name || 'User'}!</Text>
+      <Text style={styles.welcome}>
+        {t('dashboard.welcome', { name: user?.name || t('common.user') })}
+      </Text>
 
       {/* ➕ New AI Folder */}
       <TouchableOpacity
         style={styles.newFolderBtn}
         onPress={() => navigation.navigate('CourseGeneration')}
       >
-        <Text style={styles.newFolderText}>➕ New AI Folder</Text>
+        <Text style={styles.newFolderText}>{t('dashboard.newAIFolder')}</Text>
       </TouchableOpacity>
 
       {/* 🎲 Random Trivia */}
       <TouchableOpacity style={styles.randomBtn} onPress={openRandomTrivia}>
-        <Text style={styles.randomText}>🎲 Random Trivia</Text>
+        <Text style={styles.randomText}>{t('dashboard.randomTrivia')}</Text>
       </TouchableOpacity>
 
       {/* 📂 Folders */}
@@ -131,7 +192,9 @@ export default function DashboardScreen() {
             )}
           </TouchableOpacity>
         )}
-        ListEmptyComponent={<Text style={styles.emptyText}>No folders yet.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>{t('dashboard.noFolders')}</Text>
+        }
       />
     </LinearGradient>
   );
