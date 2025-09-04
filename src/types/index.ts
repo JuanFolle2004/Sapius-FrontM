@@ -54,6 +54,8 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   Dashboard: undefined;
+  Library: undefined;
+  Leagues: undefined;
   FolderScreen: { folderId: string };
   GameScreen: {
     gameId: string;

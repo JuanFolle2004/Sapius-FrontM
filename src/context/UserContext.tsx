@@ -10,6 +10,7 @@ type User = {
   name: string;
   lastname: string;
   interests?: string[];
+  playedGameIds?: string[];
 };
 
 type Ctx = {
@@ -19,6 +20,8 @@ type Ctx = {
   logout: () => Promise<void>;
   user: User | null;
   setUser: (u: User | null) => void;
+  justRegistered: boolean;
+  setJustRegistered: (v: boolean) => void;
 };
 
 const UserContext = createContext<Ctx | null>(null);
@@ -33,6 +36,7 @@ export const UserProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   const [token, setTokenState] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [justRegistered, setJustRegistered] = useState(false);
 
   const setToken = async (t: string) => {
     setTokenState(t);
@@ -75,7 +79,7 @@ export const UserProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   }, []);
 
   return (
-    <UserContext.Provider value={{ token, isLoading, setToken, logout, user, setUser }}>
+    <UserContext.Provider value={{ token, isLoading, setToken, logout, user, setUser, justRegistered, setJustRegistered }}>
       {children}
     </UserContext.Provider>
   );

@@ -12,6 +12,8 @@ import FolderScreen from '../screens/FolderScreen';
 import GameScreen from '../screens/GameScreen';
 import CourseGenerationScreen from '../screens/CourseGenerationScreen';
 import InterestsScreen from '../screens/InterestsScreen';
+import LibraryScreen from '../screens/LibraryScreen';
+import LeaguesScreen from '../screens/LeaguesScreen';
 
 const AuthStack = createNativeStackNavigator<RootStackParamList>();
 const AppStack  = createNativeStackNavigator<RootStackParamList>();
@@ -29,8 +31,10 @@ function AuthNavigator() {
 function MainNavigator() {
   return (
     <AppStack.Navigator>
-      <AppStack.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Your Folders' }} />
-      <AppStack.Screen name="FolderScreen" component={FolderScreen} options={{ title: 'Folder' }} />
+      <AppStack.Screen name="Dashboard" component={DashboardScreen} options={{ headerShown: false }} />
+      <AppStack.Screen name="Library" component={LibraryScreen} options={{ headerShown: false }} />
+      <AppStack.Screen name="Leagues" component={LeaguesScreen} options={{ headerShown: false }} />
+      <AppStack.Screen name="FolderScreen" component={FolderScreen} options={{ headerShown: false }} />
       <AppStack.Screen name="GameScreen" component={GameScreen} options={{ title: 'Game' }} />
       <AppStack.Screen name="CourseGeneration" component={CourseGenerationScreen} options={{ title: 'Generate Course' }} />
     </AppStack.Navigator>
@@ -50,21 +54,17 @@ function InterestsNavigator() {
 }
 
 export default function AppNavigator() {
-  const { token, user, isLoading } = useUser();
+  const { token, isLoading, justRegistered } = useUser();
 
   if (isLoading) {
     return null; // ⏳ show splash screen if you want
   }
 
-  console.log("👤 Navigator user:", user);
-
   return (
     <NavigationContainer>
       {!token ? (
         <AuthNavigator />
-      ) : !user ? (
-        <InterestsNavigator />
-      ) : !user.interests || user.interests.length < 5 ? (
+      ) : justRegistered ? (
         <InterestsNavigator />
       ) : (
         <MainNavigator />

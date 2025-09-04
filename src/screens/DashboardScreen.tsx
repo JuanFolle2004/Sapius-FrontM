@@ -1,36 +1,30 @@
-import React, { useState, useLayoutEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   StyleSheet,
-  Button,
-  Alert,
   Image,
 } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList, Folder } from '../types';
+import type { RootStackParamList } from '../types';
 import { useUser } from '../context/UserContext';
-import { getDashboard } from '../services/dashboardService';
-import { getRandomFolderWithGames } from '../services/folderService';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { ActionSheetIOS, Platform } from 'react-native';
+import { ActionSheetIOS, Platform, Alert } from 'react-native';
+import { useEnergy } from '../hooks/useEnergy';
 import { setLanguage } from '../i18n';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 
 export default function DashboardScreen() {
   const navigation = useNavigation<Nav>();
-  const { logout, token, setUser, user } = useUser();
+  const { logout, user } = useUser();
   const { t, i18n } = useTranslation();
-
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { energy, max, refill, batterySegments } = useEnergy(5);
 
   // 👇 Configure header (life + logout)
   const showLanguageChooser = () => {
@@ -82,129 +76,68 @@ export default function DashboardScreen() {
       );
     }
   };
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
-        <View style={styles.lifeContainer}>
-          <View style={styles.lifeBarBackground}>
-            <View style={styles.lifeBarFill} />
-          </View>
-          <Text style={styles.lifeText}>5/5</Text>
-        </View>
-      ),
-      headerRight: () => (
-        <TouchableOpacity onPress={showMenu} style={{ paddingHorizontal: 8 }}>
-          <Ionicons name="ellipsis-vertical" size={22} color="#111827" />
-        </TouchableOpacity>
-      ),
-      headerBackVisible: false,
-      gestureEnabled: false,
-    });
-  }, [navigation, logout, i18n.language, t]);
-
-  // 👇 Fetch dashboard data
-  async function fetchDashboard() {
-    if (!token) return;
-    try {
-      const data = await getDashboard();
-      setFolders(data.folders || []);
-      setUser(data.user);
-    } catch (e: any) {
-      console.log('❌ dashboard error:', e?.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // ✅ Refetch on focus
-  useFocusEffect(
-    useCallback(() => {
-      fetchDashboard();
-    }, [token])
-  );
-
-  const openFolder = (folderId: string) => {
-    navigation.navigate('FolderScreen', { folderId });
-  };
-
-  const openRandomTrivia = async () => {
-    try {
-      const { folder, games } = await getRandomFolderWithGames();
-      if (games.length > 0) {
-        navigation.navigate('GameScreen', {
-          gameId: games[0].id,
-          folderId: folder.id,
-          games,
-          currentIndex: 0,
-        });
-      } else {
-        Alert.alert('No games available', 'Could not load random trivia.');
-      }
-    } catch (e: any) {
-      Alert.alert('Error', 'Could not load random trivia.');
-    }
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#14b8a6" />
-      </View>
-    );
-  }
+  
+  const xp = (user?.playedGameIds?.length || 0) * 10;
+  const streakDays = 0; // TODO: wire to backend or daily activity
 
   return (
-    <LinearGradient colors={['#ecfdf5', '#f9fafb']} style={styles.container}>
-      {/* 👇 Logo at the top */}
-      <Image
-        source={require('../../assets/images/Logo.png')}
-        style={styles.logo}
-      />
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+      <LinearGradient colors={['#ecfdf5', '#f9fafb']} style={styles.container}>
+      {/* Top bar: XP, Energy, Settings */}
+      <View style={styles.topBar}>
+        <View style={styles.xpPill}>
+          <Ionicons name="flash" size={16} color="#f59e0b" />
+          <Text style={styles.xpText}>{xp} XP</Text>
+        </View>
 
-      <Text style={styles.welcome}>
-        {t('dashboard.welcome', { name: user?.name || t('common.user') })}
-      </Text>
+        <View style={styles.energyContainer}>
+          {batterySegments.map((filled, idx) => (
+            <View key={idx} style={[styles.energySegment, filled ? styles.energyFilled : styles.energyEmpty]} />
+          ))}
+          <View style={styles.energyCap} />
+          <Text style={styles.energyLabel}>{energy}/{max}</Text>
+        </View>
 
-      {/* ➕ New AI Folder */}
-      <TouchableOpacity
-        style={styles.newFolderBtn}
-        onPress={() => navigation.navigate('CourseGeneration')}
-      >
-        <Text style={styles.newFolderText}>{t('dashboard.newAIFolder')}</Text>
+        <TouchableOpacity onPress={showMenu} style={styles.settingsBtn}>
+          <Ionicons name="settings-outline" size={22} color="#111827" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Greeting + Logo */}
+      <Image source={require('../../assets/images/Logo.png')} style={styles.logo} />
+      <Text style={styles.greeting}>Hi {user?.name || 'Player'} 👋</Text>
+
+      {/* Cards row 1: Streak */}
+      <View style={styles.cardRow}>
+        <View style={[styles.bigCard, styles.cardStreak]}> 
+          <Text style={styles.cardTitle}>Streak</Text>
+          <Text style={styles.streakValue}>{streakDays} days</Text>
+        </View>
+      </View>
+
+      {/* Cards row 2: Library and Leagues */}
+      <View style={styles.cardRow}>
+        <TouchableOpacity style={[styles.squareCard, styles.cardLibrary]} onPress={() => navigation.navigate('Library')}>
+          <Ionicons name="library-outline" size={24} color="#1f2937" />
+          <Text style={styles.squareText}>Library</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.squareCard, styles.cardLeagues]} onPress={() => navigation.navigate('Leagues')}>
+          <Ionicons name="trophy-outline" size={24} color="#1f2937" />
+          <Text style={styles.squareText}>Leagues</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Optional: Refill energy quick action */}
+      <TouchableOpacity style={styles.refillBtn} onPress={() => refill()}>
+        <Text style={styles.refillText}>Refill Energy</Text>
       </TouchableOpacity>
-
-      {/* 🎲 Random Trivia */}
-      <TouchableOpacity style={styles.randomBtn} onPress={openRandomTrivia}>
-        <Text style={styles.randomText}>{t('dashboard.randomTrivia')}</Text>
-      </TouchableOpacity>
-
-      {/* 📂 Folders */}
-      <FlatList
-        data={folders}
-        keyExtractor={(f) => f.id}
-        contentContainerStyle={{ paddingBottom: 40 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={() => openFolder(item.id)}>
-            <Text style={styles.cardTitle}>{item.title}</Text>
-            {!!item.description && (
-              <Text style={styles.cardSubtitle}>{item.description}</Text>
-            )}
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>{t('dashboard.noFolders')}</Text>
-        }
-      />
-    </LinearGradient>
+      </LinearGradient>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-
-  // 👇 Logo
   logo: {
     width: 100,
     height: 100,
@@ -212,67 +145,26 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 12,
   },
-
-  welcome: { fontSize: 22, fontWeight: '700', marginBottom: 20 },
-
-  // ❤️ Life bar
-  lifeContainer: { flexDirection: 'row', alignItems: 'center', marginLeft: 8 },
-  lifeBarBackground: {
-    width: 80,
-    height: 14,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 7,
-    marginRight: 6,
-  },
-  lifeBarFill: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#ef4444',
-    borderRadius: 7,
-  },
-  lifeText: { fontSize: 12, fontWeight: '600' },
-
-  // ➕ New AI Folder
-  newFolderBtn: {
-    backgroundColor: '#14b8a6',
-    padding: 14,
-    borderRadius: 14,
-    marginBottom: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  newFolderText: { color: 'white', fontWeight: '700', fontSize: 16 },
-
-  // 🎲 Random Trivia
-  randomBtn: {
-    backgroundColor: '#f59e0b',
-    padding: 14,
-    borderRadius: 14,
-    marginBottom: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  randomText: { color: 'white', fontWeight: '700', fontSize: 16 },
-
-  // 📂 Folder cards
-  card: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  cardTitle: { fontSize: 18, fontWeight: '700', marginBottom: 6 },
-  cardSubtitle: { fontSize: 14, color: '#555' },
-
-  emptyText: { textAlign: 'center', marginTop: 20, color: '#555' },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  xpPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fef3c7', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
+  xpText: { marginLeft: 6, fontWeight: '700', color: '#92400e' },
+  energyContainer: { flexDirection: 'row', alignItems: 'center' },
+  energySegment: { width: 12, height: 18, marginRight: 2, borderRadius: 2 },
+  energyFilled: { backgroundColor: '#10b981' },
+  energyEmpty: { backgroundColor: '#e5e7eb' },
+  energyCap: { width: 2, height: 10, backgroundColor: '#111827', marginLeft: 2, marginRight: 6 },
+  energyLabel: { fontSize: 12, color: '#111827' },
+  settingsBtn: { paddingHorizontal: 6, paddingVertical: 6 },
+  greeting: { fontSize: 22, fontWeight: '800', textAlign: 'center', marginBottom: 12 },
+  cardRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  bigCard: { flex: 1, backgroundColor: '#ffffff', padding: 16, borderRadius: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  cardStreak: { backgroundColor: '#dbeafe' },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: '#1f2937' },
+  streakValue: { marginTop: 8, fontSize: 28, fontWeight: '800', color: '#1f2937' },
+  squareCard: { flex: 1, backgroundColor: '#ffffff', padding: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  cardLibrary: { marginRight: 8, backgroundColor: '#f0fdf4' },
+  cardLeagues: { marginLeft: 8, backgroundColor: '#fff1f2' },
+  squareText: { marginTop: 6, fontSize: 16, fontWeight: '700', color: '#1f2937' },
+  refillBtn: { marginTop: 'auto', backgroundColor: '#14b8a6', padding: 14, borderRadius: 14, alignItems: 'center' },
+  refillText: { color: 'white', fontWeight: '700' },
 });

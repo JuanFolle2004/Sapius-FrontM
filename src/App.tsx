@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { UserProvider } from './context/UserContext';
 import AppNavigator from './navigation/AppNavigator';
 import './i18n';
@@ -9,8 +10,10 @@ export default function App() {
     loadStoredLanguage();
   }, []);
   return (
-    <UserProvider>
-      <AppNavigator />
-    </UserProvider>
+    <SafeAreaProvider>
+      <UserProvider>
+        <AppNavigator />
+      </UserProvider>
+    </SafeAreaProvider>
   );
 }

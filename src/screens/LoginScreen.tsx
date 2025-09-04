@@ -4,6 +4,7 @@ import {
   StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
 import { login } from '../services/auth';
@@ -51,8 +52,9 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.select({ ios: 'padding', android: undefined })}>
-      <View style={styles.container}>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.select({ ios: 'padding', android: undefined })}>
+        <View style={styles.container}>
         <Text style={styles.logo}>Sapius</Text>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -67,8 +69,9 @@ export default function LoginScreen() {
         <TouchableOpacity onPress={() => navigation.navigate('Register')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.link}>Don’t have an account? <Text style={styles.linkBold}>Register</Text></Text>
         </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

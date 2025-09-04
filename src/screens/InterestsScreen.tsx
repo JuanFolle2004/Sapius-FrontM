@@ -9,7 +9,7 @@ import { getMe, updateUserInterests } from '../services/userService';
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Interests'>;
 
 export default function InterestsScreen() {
-  const { token, setUser } = useUser();
+  const { token, setUser, setJustRegistered } = useUser();
   const [selected, setSelected] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -38,6 +38,9 @@ export default function InterestsScreen() {
       // 🔄 refresh profile and save it in context
       const updatedUser = await getMe(token);
       setUser(updatedUser);
+
+      // ✅ onboarding done for this session
+      setJustRegistered(false);
 
       // No navegamos manualmente: el AppNavigator hará el switch al Dashboard
       // al detectar user.interests.length >= 5

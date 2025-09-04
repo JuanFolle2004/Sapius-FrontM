@@ -21,7 +21,10 @@ import { getFolderProgress, FolderProgress } from '../services/gameService';
 import { useUser } from '../context/UserContext';
 import Prompt from 'react-native-prompt-android';
 import { ActionSheetIOS, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Route = RouteProp<RootStackParamList, 'FolderScreen'>;
 type Nav = NativeStackNavigationProp<RootStackParamList, 'FolderScreen'>;
@@ -35,6 +38,7 @@ export default function FolderScreen() {
   const navigation = useNavigation<Nav>();
   const { token } = useUser()!;
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const [folder, setFolder] = useState<Folder | null>(null);
   const [games, setGames] = useState<Game[]>([]);
@@ -194,148 +198,170 @@ export default function FolderScreen() {
   const unplayed = games.filter((g) => !g.played);
   const played = games.filter((g) => g.played);
 
-  if (loading) return <View style={styles.center}><ActivityIndicator /></View>;
-  if (!folder) return <View style={styles.center}><Text>{t('errors.folderNotFound')}</Text></View>;
+  if (loading) return <SafeAreaView style={styles.center} edges={['top', 'bottom']}><ActivityIndicator /></SafeAreaView>;
+  if (!folder) return <SafeAreaView style={styles.center} edges={['top', 'bottom']}><Text>{t('errors.folderNotFound')}</Text></SafeAreaView>;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{folder.title}</Text>
-      {folder.description && <Text style={styles.subtitle}>{folder.description}</Text>}
-
-      {/* 🔹 Folder progress */}
-      <View style={{ marginVertical: 12 }}>
-        <Text style={{ fontWeight: '600' }}>
-          Progress: {correctCount}/{totalPlayed} ({percentage}%)
-        </Text>
-        <View style={styles.progressBarBackground}>
-          <View style={[styles.progressBarFill, { width: `${percentage}%` }]} />
-        </View>
-      </View>
-
-      {/* 🔹 Rename & Delete */}
-      <View style={styles.actions}>
-        <TouchableOpacity style={styles.renameBtn} onPress={handleRename}>
-          <Text style={styles.actionText}>✏️ {t('folder.rename')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
-          <Text style={styles.actionText}>🗑️ {t('common.delete')}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* 🔹 Generate more games */}
-      <TouchableOpacity style={styles.generateBtn} onPress={showGenerateOptions} disabled={generating}>
-        <Text style={styles.generateText}>
-          {generating ? '⏳ Generating...' : t('folder.generateMore')}
-        </Text>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Library button stacked above the book header */}
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Library')}
+        activeOpacity={0.9}
+        style={styles.libraryBtn}
+      >
+        <Ionicons name="library-outline" size={18} color="#ffffff" />
+        <Text style={styles.libraryBtnText}>Library</Text>
       </TouchableOpacity>
 
-      <Text style={styles.subtitle}>{t('folder.games')}</Text>
+      {/* Book cover header directly below the Library button */}
+      <View style={styles.bookHeader}>
+        <View style={styles.spine} />
+        <Text numberOfLines={2} style={styles.bookTitle}>{folder.title}</Text>
+      </View>
 
-      {/* 🔹 Unplayed */}
+      {/* Pages: show games as pages */}
       <FlatList
-        data={unplayed}
+        data={games}
         keyExtractor={(g) => g.id}
-        renderItem={({ item, index }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() =>
-              navigation.navigate('GameScreen', {
-                gameId: item.id,
-                folderId: folder.id,
-                games,
-                currentIndex: games.findIndex((x) => x.id === item.id),
-                onPlayed: markGameAsPlayedLocally,
-              } as any)
-            }
-          >
-            <Text style={{ fontWeight: '600' }}>{item.title || `Game ${index + 1}`}</Text>
-            <Text numberOfLines={2}>{item.question}</Text>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={<Text>🎉 {t('folder.allPlayed')}</Text>}
-      />
-
-      {/* 🔹 Played */}
-      {played.length > 0 && <Text style={styles.subtitle}>{t('folder.played')}</Text>}
-
-      <FlatList
-        data={played}
-        keyExtractor={(g) => g.id}
-        renderItem={({ item }) => {
+        contentContainerStyle={{ paddingBottom: 120 }}
+        renderItem={({ item, index }) => {
           const result = progress[item.id];
+          const played = !!result;
           return (
-            <TouchableOpacity
-              style={[styles.card, { backgroundColor: '#f3f4f6' }]}
-              onPress={() =>
-                navigation.navigate('GameScreen', {
-                  gameId: item.id,
-                  folderId: folder.id,
-                  games,
-                  currentIndex: games.findIndex((x) => x.id === item.id),
-                  onPlayed: markGameAsPlayedLocally,
-                } as any)
-              }
-            >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <View>
-                  <Text style={{ fontWeight: '600' }}>{item.title || 'Game'}</Text>
-                  <Text numberOfLines={2}>{item.question}</Text>
-                </View>
-                <Text style={{ fontSize: 22 }}>
-                  {result?.correct ? '✅' : '❌'}
-                </Text>
+            <View style={[styles.pageCard, played && styles.pagePlayed]}>
+              <View style={styles.pageHeader}>
+                <Text style={styles.pageNumber}>Page {index + 1}</Text>
+                <Text style={styles.pageStatus}>{played ? (result?.correct ? '✅' : '❌') : '⏳'}</Text>
               </View>
-            </TouchableOpacity>
+              <Text numberOfLines={2} style={styles.pageTitle}>{item.title || 'Question'}</Text>
+              <Text numberOfLines={2} style={styles.pagePreview}>{item.question}</Text>
+              <TouchableOpacity
+                style={styles.playBtn}
+                onPress={() =>
+                  navigation.navigate('GameScreen', {
+                    gameId: item.id,
+                    folderId: folder.id,
+                    games,
+                    currentIndex: games.findIndex((x) => x.id === item.id),
+                    onPlayed: markGameAsPlayedLocally,
+                  } as any)
+                }
+              >
+                <Text style={styles.playText}>{played ? 'Review' : 'Play'}</Text>
+              </TouchableOpacity>
+            </View>
           );
         }}
+        ListFooterComponent={
+          <TouchableOpacity style={styles.addPagesBtn} onPress={showGenerateOptions} disabled={generating}>
+            <Text style={styles.addPagesText}>{generating ? 'Generating pages…' : 'Create more pages'}</Text>
+          </TouchableOpacity>
+        }
       />
-    </View>
+
+      {/* Bottom fade so items gently disappear under the action bar */}
+      <LinearGradient
+        pointerEvents="none"
+        colors={["rgba(248,250,252,0)", "#f8fafc"]}
+        style={styles.bottomFade}
+      />
+
+      {/* Bottom actions: rename / delete */}
+      <View style={[styles.bottomBar, { bottom: 16 + insets.bottom }]}>
+        <TouchableOpacity style={styles.renameBtn} onPress={handleRename}>
+          <Text style={styles.actionText}>Rename</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+          <Text style={styles.actionText}>Delete</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 22, fontWeight: '700', marginBottom: 8 },
-  subtitle: { fontSize: 16, marginVertical: 8, color: '#555' },
-  card: {
-    padding: 14,
+  container: { flex: 1, padding: 16, backgroundColor: '#f8fafc' },
+  bookHeader: {
+    height: 80,
+    backgroundColor: '#fde68a',
+    borderRadius: 16,
+    marginBottom: 12,
+    justifyContent: 'center',
+    paddingLeft: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  spine: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 10,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
+  },
+  bookTitle: { fontSize: 22, fontWeight: '800', color: '#1f2937', paddingLeft: 8 },
+  pageCard: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
     borderWidth: 1,
-    borderRadius: 12,
-    marginBottom: 10,
-    borderColor: '#ddd',
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
   },
-  generateBtn: {
-    backgroundColor: '#14b8a6',
-    padding: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 16,
+  pagePlayed: {
+    backgroundColor: '#f9fafb',
   },
-  generateText: { color: 'white', fontWeight: '700' },
-  actions: { flexDirection: 'row', marginBottom: 12 },
-  renameBtn: {
-    backgroundColor: '#3b82f6',
-    padding: 10,
-    borderRadius: 8,
-    marginRight: 8,
+  pageHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  pageNumber: { color: '#6b7280', fontWeight: '700' },
+  pageStatus: { fontSize: 18 },
+  pageTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
+  pagePreview: { color: '#4b5563' },
+  playBtn: { marginTop: 10, backgroundColor: '#14b8a6', padding: 12, borderRadius: 12, alignItems: 'center' },
+  playText: { color: 'white', fontWeight: '700' },
+  addPagesBtn: { marginTop: 6, backgroundColor: '#f59e0b', padding: 12, borderRadius: 12, alignItems: 'center' },
+  addPagesText: { color: 'white', fontWeight: '700' },
+  bottomBar: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    zIndex: 20,
   },
-  deleteBtn: {
-    backgroundColor: '#ef4444',
-    padding: 10,
-    borderRadius: 8,
-  },
+  renameBtn: { backgroundColor: '#3b82f6', padding: 14, borderRadius: 12, flex: 1, marginRight: 8, alignItems: 'center' },
+  deleteBtn: { backgroundColor: '#ef4444', padding: 14, borderRadius: 12, flex: 1, marginLeft: 8, alignItems: 'center' },
   actionText: { color: 'white', fontWeight: '700' },
-  progressBarBackground: {
-    width: '100%',
-    height: 8,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 4,
-    marginTop: 4,
-  },
-  progressBarFill: {
-    height: 8,
+  libraryBtn: {
+    alignSelf: 'flex-start',
     backgroundColor: '#14b8a6',
-    borderRadius: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
+    marginBottom: 8,
+  },
+  libraryBtnText: { color: 'white', fontWeight: '800' },
+  bottomFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 140,
+    zIndex: 10,
   },
 });

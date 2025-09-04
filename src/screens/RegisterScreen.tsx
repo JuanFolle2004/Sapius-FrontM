@@ -15,6 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, RegisterRequest } from '../types';
 import { register, login } from '../services/auth';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getMe } from '../services/userService';
 import { useUser } from '../context/UserContext';
 
@@ -22,7 +23,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'Register'>;
 
 export default function RegisterScreen() {
   const navigation = useNavigation<Nav>();
-  const { setToken, setUser } = useUser();
+  const { setToken, setUser, setJustRegistered } = useUser();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -69,8 +70,12 @@ export default function RegisterScreen() {
       await register(payload);
 
       const { access_token } = await login(email, password);
-      await setToken(access_token);
 
+      // mark onboarding so Interests shows immediately after auth switch
+      setJustRegistered(true);
+
+      // set auth and hydrate user
+      await setToken(access_token);
       const profile = await getMe(access_token);
       setUser(profile);
 
@@ -91,12 +96,13 @@ export default function RegisterScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.select({ ios: 'padding', android: undefined })}
-    >
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.form}>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.select({ ios: 'padding', android: undefined })}
+      >
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <View style={styles.form}>
           <Text style={styles.title}>Create your account</Text>
 
           <TextInput
@@ -192,9 +198,10 @@ export default function RegisterScreen() {
           >
             <Text style={{ textAlign: 'center' }}>Back to Login</Text>
           </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
