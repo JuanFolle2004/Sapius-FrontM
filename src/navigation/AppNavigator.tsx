@@ -14,6 +14,7 @@ import CourseGenerationScreen from '../screens/CourseGenerationScreen';
 import InterestsScreen from '../screens/InterestsScreen';
 import LibraryScreen from '../screens/LibraryScreen';
 import LeaguesScreen from '../screens/LeaguesScreen';
+import LoadingView from '../../components/LoadingView';
 
 const AuthStack = createNativeStackNavigator<RootStackParamList>();
 const AppStack  = createNativeStackNavigator<RootStackParamList>();
@@ -57,7 +58,7 @@ export default function AppNavigator() {
   const { token, isLoading, justRegistered } = useUser();
 
   if (isLoading) {
-    return null; // ⏳ show splash screen if you want
+    return <LoadingView />;
   }
 
   return (

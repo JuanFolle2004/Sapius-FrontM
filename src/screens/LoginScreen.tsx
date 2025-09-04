@@ -63,7 +63,7 @@ export default function LoginScreen() {
         <TextInput style={styles.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} onSubmitEditing={onSubmit}/>
 
         <TouchableOpacity style={[styles.button, submitting && styles.buttonDisabled]} onPress={onSubmit} disabled={submitting}>
-          {submitting ? <ActivityIndicator /> : <Text style={styles.buttonText}>Log In</Text>}
+          {submitting ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Log In</Text>}
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate('Register')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>

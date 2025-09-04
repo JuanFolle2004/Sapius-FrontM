@@ -10,7 +10,6 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
 import { useUser } from '../context/UserContext';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -81,8 +80,7 @@ export default function DashboardScreen() {
   const streakDays = 0; // TODO: wire to backend or daily activity
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
-      <LinearGradient colors={['#ecfdf5', '#f9fafb']} style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       {/* Top bar: XP, Energy, Settings */}
       <View style={styles.topBar}>
         <View style={styles.xpPill}>
@@ -131,13 +129,12 @@ export default function DashboardScreen() {
       <TouchableOpacity style={styles.refillBtn} onPress={() => refill()}>
         <Text style={styles.refillText}>Refill Energy</Text>
       </TouchableOpacity>
-      </LinearGradient>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: { flex: 1, padding: 16, backgroundColor: '#f8fafc' },
   logo: {
     width: 100,
     height: 100,

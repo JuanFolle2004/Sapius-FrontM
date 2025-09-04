@@ -4,7 +4,6 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   StyleSheet,
   Alert,
 } from 'react-native';
@@ -25,6 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import LoadingView from '../../components/LoadingView';
 
 type Route = RouteProp<RootStackParamList, 'FolderScreen'>;
 type Nav = NativeStackNavigationProp<RootStackParamList, 'FolderScreen'>;
@@ -198,7 +198,7 @@ export default function FolderScreen() {
   const unplayed = games.filter((g) => !g.played);
   const played = games.filter((g) => g.played);
 
-  if (loading) return <SafeAreaView style={styles.center} edges={['top', 'bottom']}><ActivityIndicator /></SafeAreaView>;
+  if (loading) return <LoadingView />;
   if (!folder) return <SafeAreaView style={styles.center} edges={['top', 'bottom']}><Text>{t('errors.folderNotFound')}</Text></SafeAreaView>;
 
   return (
@@ -262,7 +262,7 @@ export default function FolderScreen() {
       {/* Bottom fade so items gently disappear under the action bar */}
       <LinearGradient
         pointerEvents="none"
-        colors={["rgba(248,250,252,0)", "#f8fafc"]}
+        colors={["rgba(248,250,252,0)", "rgba(248,250,252,0.85)", "#f8fafc"]}
         style={styles.bottomFade}
       />
 
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: 140,
+    height: 220,
     zIndex: 10,
   },
 });

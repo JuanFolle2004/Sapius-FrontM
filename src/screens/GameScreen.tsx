@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import LoadingView from '../../components/LoadingView';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, Game } from '../types';
@@ -54,7 +55,7 @@ export default function GameScreen() {
     }
   }, [selected, game]);
 
-  if (!game) return <Text>{t('game.loading')}</Text>;
+  if (!game) return <LoadingView />;
 
   // 🔹 Move to next *unplayed* game or back to folder
   const goNext = () => {

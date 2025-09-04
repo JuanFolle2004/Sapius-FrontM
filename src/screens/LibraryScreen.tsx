@@ -1,5 +1,5 @@
 import React, { useCallback, useLayoutEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Dimensions } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Dimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,6 +10,7 @@ import { useUser } from '../context/UserContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { ActionSheetIOS, Platform } from 'react-native';
+import LoadingView from '../../components/LoadingView';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Library'>;
 
@@ -79,11 +80,7 @@ export default function LibraryScreen() {
   };
 
   if (loading) {
-    return (
-      <SafeAreaView style={styles.center} edges={['top', 'bottom']}>
-        <ActivityIndicator size="large" color="#14b8a6" />
-      </SafeAreaView>
-    );
+    return <LoadingView />;
   }
 
   return (

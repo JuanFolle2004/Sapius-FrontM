@@ -89,7 +89,7 @@ export default function InterestsScreen() {
         activeOpacity={0.7}
       >
         {isSubmitting ? (
-          <ActivityIndicator />
+          <ActivityIndicator color="#14b8a6" />
         ) : (
           <Text style={styles.saveText}>Save Interests</Text>
         )}
@@ -97,7 +97,7 @@ export default function InterestsScreen() {
 
       {isSubmitting && (
         <View style={styles.overlay}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color="#14b8a6" />
         </View>
       )}
     </View>

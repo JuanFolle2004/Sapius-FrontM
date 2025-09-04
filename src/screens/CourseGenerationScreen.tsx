@@ -99,7 +99,7 @@ export default function CourseGenerationScreen() {
         onPress={onGenerate}
         disabled={!topic.trim() || loading}
       >
-        {loading ? <ActivityIndicator /> : <Text style={styles.genText}>Generate Course</Text>}
+        {loading ? <ActivityIndicator color="white" /> : <Text style={styles.genText}>Generate Course</Text>}
       </TouchableOpacity>
     </View>
   );
