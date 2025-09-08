@@ -10,10 +10,18 @@
     "language": "Idioma",
     "english": "Inglés",
     "spanish": "Español",
-    "options": "Opciones"
+    "options": "Opciones",
+    "library": "Biblioteca",
+    "home": "Inicio",
+    "leagues": "Ligas",
+    "play": "Jugar"
   },
   "dashboard": {
     "welcome": "¡Bienvenido, {{name}}!",
+    "hi": "Hola {{name}}",
+    "streak": "Racha",
+    "days": "{{count}} días",
+    "refillEnergy": "Recargar energía",
     "newAIFolder": "Nueva carpeta con IA",
     "randomTrivia": "Trivia aleatoria",
     "noGames": "No hay juegos disponibles",
@@ -38,7 +46,11 @@
     "allPlayed": "¡Todos los juegos jugados!",
     "played": "Juegos jugados",
     "games": "Juegos",
-    "rename": "Renombrar"
+    "rename": "Renombrar",
+    "play": "Jugar",
+    "review": "Revisar",
+    "noMore": "No hay más juegos generados",
+    "page": "Página"
   },
   "game": {
     "thankYou": "Gracias",
@@ -48,9 +60,86 @@
     "finish": "Finalizar",
     "reportIssue": "Reportar problema",
     "explanationPrefix": "Explicación:",
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "title": "Juego"
+  },
+  "library": {
+    "title": "Tu biblioteca",
+    "newBook": "Nuevo libro",
+    "empty": "Aún no hay libros."
+  },
+  "course": {
+    "navTitle": "Generar curso",
+    "title": "Generar curso personalizado",
+    "promptLabel": "¿Qué te gustaría aprender?",
+    "promptPlaceholder": "Escribe cualquier tema que te interese.",
+    "difficulty": "Dificultad",
+    "duration": "Duración",
+    "minutes": "{{count}} minutos",
+    "generate": "Generar curso",
+    "errorTitle": "Error",
+    "errorMessage": "Hubo un problema al generar tu curso.",
+    "description": "Curso generado por IA sobre {{topic}}"
+  },
+  "login": {
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "submit": "Iniciar sesión",
+    "needAccount": "¿No tienes cuenta?",
+    "register": "Regístrate",
+    "missingFields": "Ingresa tu correo y contraseña.",
+    "failed": "Error de inicio de sesión. Revisa tus credenciales."
+  },
+  "register": {
+    "title": "Crea tu cuenta",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "phoneOptional": "Teléfono (opcional)",
+    "birthDate": "Fecha de nacimiento",
+    "selectBirthDate": "Selecciona la fecha de nacimiento",
+    "submit": "Registrarse",
+    "backToLogin": "Volver al inicio de sesión",
+    "failed": "Registro fallido",
+    "birthDateRequired": "Selecciona tu fecha de nacimiento"
+  },
+  "interests": {
+    "navTitle": "Elige tus intereses",
+    "title": "Elige 5 intereses",
+    "counter": "{{selected}} / 5 seleccionados",
+    "limitTitle": "Límite",
+    "limitMessage": "Solo puedes elegir 5 intereses.",
+    "errorTitle": "Error",
+    "errorSelectFive": "Selecciona exactamente 5 intereses.",
+    "successTitle": "Éxito",
+    "successMessage": "¡Tus intereses han sido guardados!",
+    "save": "Guardar intereses",
+    "items": {
+      "History": "Historia",
+      "Math": "Matemáticas",
+      "Geography": "Geografía",
+      "Science": "Ciencias",
+      "Sports": "Deportes",
+      "Movies": "Cine",
+      "Music": "Música",
+      "Technology": "Tecnología",
+      "Art": "Arte",
+      "Literature": "Literatura",
+      "Politics": "Política",
+      "Business": "Negocios",
+      "Economics": "Economía",
+      "Philosophy": "Filosofía",
+      "Religion": "Religión",
+      "Food": "Comida",
+      "Travel": "Viajes",
+      "Nature": "Naturaleza",
+      "Languages": "Idiomas",
+      "Pop Culture": "Cultura pop"
+    }
   },
   "errors": {
-    "folderNotFound": "Carpeta no encontrada"
+    "folderNotFound": "Carpeta no encontrada",
+    "generic": "Ocurrió un error"
   }
 }

@@ -10,10 +10,18 @@
     "language": "Language",
     "english": "English",
     "spanish": "Spanish",
-    "options": "Options"
+    "options": "Options",
+    "library": "Library",
+    "home": "Home",
+    "leagues": "Leagues",
+    "play": "Play"
   },
   "dashboard": {
     "welcome": "Welcome, {{name}}!",
+    "hi": "Hi {{name}}",
+    "streak": "Streak",
+    "days": "{{count}} days",
+    "refillEnergy": "Refill Energy",
     "newAIFolder": "New AI Folder",
     "randomTrivia": "Random Trivia",
     "noGames": "No games available",
@@ -38,7 +46,11 @@
     "allPlayed": "All games played!",
     "played": "Played Games",
     "games": "Games",
-    "rename": "Rename"
+    "rename": "Rename",
+    "play": "Play",
+    "review": "Review",
+    "noMore": "No more games generated",
+    "page": "Page"
   },
   "game": {
     "thankYou": "Thank you",
@@ -48,9 +60,86 @@
     "finish": "Finish",
     "reportIssue": "Report Issue",
     "explanationPrefix": "Explanation:",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "title": "Game"
+  },
+  "library": {
+    "title": "Your Library",
+    "newBook": "New Book",
+    "empty": "No books yet."
+  },
+  "course": {
+    "navTitle": "Generate Course",
+    "title": "Generate Custom Course",
+    "promptLabel": "What would you like to learn?",
+    "promptPlaceholder": "Enter any topic you're curious about.",
+    "difficulty": "Difficulty",
+    "duration": "Duration",
+    "minutes": "{{count}} minutes",
+    "generate": "Generate Course",
+    "errorTitle": "Error",
+    "errorMessage": "There was a problem generating your course.",
+    "description": "AI-generated course on {{topic}}"
+  },
+  "login": {
+    "email": "Email",
+    "password": "Password",
+    "submit": "Log In",
+    "needAccount": "Don't have an account?",
+    "register": "Register",
+    "missingFields": "Please enter your email and password.",
+    "failed": "Login failed. Check your credentials."
+  },
+  "register": {
+    "title": "Create your account",
+    "email": "Email",
+    "password": "Password",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "phoneOptional": "Phone (optional)",
+    "birthDate": "Birth date",
+    "selectBirthDate": "Select birth date",
+    "submit": "Register",
+    "backToLogin": "Back to Login",
+    "failed": "Registration failed",
+    "birthDateRequired": "Please select your birth date"
+  },
+  "interests": {
+    "navTitle": "Pick Your Interests",
+    "title": "Choose 5 interests",
+    "counter": "{{selected}} / 5 selected",
+    "limitTitle": "Limit",
+    "limitMessage": "You can only choose 5 interests.",
+    "errorTitle": "Error",
+    "errorSelectFive": "Please select exactly 5 interests.",
+    "successTitle": "Success",
+    "successMessage": "Your interests have been saved!",
+    "save": "Save Interests",
+    "items": {
+      "History": "History",
+      "Math": "Math",
+      "Geography": "Geography",
+      "Science": "Science",
+      "Sports": "Sports",
+      "Movies": "Movies",
+      "Music": "Music",
+      "Technology": "Technology",
+      "Art": "Art",
+      "Literature": "Literature",
+      "Politics": "Politics",
+      "Business": "Business",
+      "Economics": "Economics",
+      "Philosophy": "Philosophy",
+      "Religion": "Religion",
+      "Food": "Food",
+      "Travel": "Travel",
+      "Nature": "Nature",
+      "Languages": "Languages",
+      "Pop Culture": "Pop Culture"
+    }
   },
   "errors": {
-    "folderNotFound": "Folder not found"
+    "folderNotFound": "Folder not found",
+    "generic": "An error occurred"
   }
 }

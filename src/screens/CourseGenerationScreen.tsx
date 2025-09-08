@@ -13,11 +13,13 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
 import { createFolder } from '../services/folderService';
 import { generateGamesForFolder } from '../services/folderService';
+import { useTranslation } from 'react-i18next';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'CourseGeneration'>;
 
 export default function CourseGenerationScreen() {
   const navigation = useNavigation<Nav>();
+  const { t, i18n } = useTranslation();
 
   const [topic, setTopic] = useState('');
   const [difficulty, setDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
@@ -25,8 +27,8 @@ export default function CourseGenerationScreen() {
   const [loading, setLoading] = useState(false);
 
   useLayoutEffect(() => {
-    navigation.setOptions({ title: 'Generate Course' });
-  }, [navigation]);
+    navigation.setOptions({ title: t('course.navTitle') });
+  }, [navigation, t]);
 
   const onGenerate = async () => {
     if (!topic.trim()) return;
@@ -35,7 +37,7 @@ export default function CourseGenerationScreen() {
       // 1️⃣ Create the folder
       const folder = await createFolder({
         title: topic,
-        description: `AI-generated course on ${topic}`,
+        description: t('course.description', { defaultValue: `AI-generated course on ${topic}`, topic }),
         prompt: topic,
       });
 
@@ -46,7 +48,7 @@ export default function CourseGenerationScreen() {
       navigation.replace('FolderScreen', { folderId: folder.id });
     } catch (e: any) {
       console.log('generate error', e?.response?.data || e?.message);
-      Alert.alert('Error', 'There was a problem generating your course.');
+      Alert.alert(t('course.errorTitle'), t('course.errorMessage'));
     } finally {
       setLoading(false);
     }
@@ -54,18 +56,18 @@ export default function CourseGenerationScreen() {
 
   return (
     <View style={styles.page}>
-      <Text style={styles.title}>Generate Custom Course</Text>
+      <Text style={styles.title}>{t('course.title')}</Text>
 
-      <Text style={styles.label}>What would you like to learn?</Text>
+      <Text style={styles.label}>{t('course.promptLabel')}</Text>
       <TextInput
         style={styles.input}
         value={topic}
         onChangeText={setTopic}
-        placeholder="Enter any topic you're curious about."
+        placeholder={t('course.promptPlaceholder')}
       />
 
       {/* Difficulty selection */}
-      <Text style={styles.label}>Difficulty</Text>
+      <Text style={styles.label}>{t('course.difficulty')}</Text>
       <View style={styles.row}>
         {(['beginner', 'intermediate', 'advanced'] as const).map((v) => (
           <TouchableOpacity
@@ -79,7 +81,7 @@ export default function CourseGenerationScreen() {
       </View>
 
       {/* Duration selection */}
-      <Text style={styles.label}>Duration</Text>
+      <Text style={styles.label}>{t('course.duration')}</Text>
       <View style={styles.row}>
         {(['5', '10', '15'] as const).map((v) => (
           <TouchableOpacity
@@ -88,7 +90,7 @@ export default function CourseGenerationScreen() {
             onPress={() => setDuration(v)}
           >
             <Text style={[styles.pillText, duration === v && styles.pillTextActive]}>
-              {v} minutes
+              {t('course.minutes', { count: parseInt(v, 10) })}
             </Text>
           </TouchableOpacity>
         ))}
@@ -99,7 +101,7 @@ export default function CourseGenerationScreen() {
         onPress={onGenerate}
         disabled={!topic.trim() || loading}
       >
-        {loading ? <ActivityIndicator color="white" /> : <Text style={styles.genText}>Generate Course</Text>}
+        {loading ? <ActivityIndicator color="white" /> : <Text style={styles.genText}>{t('course.generate')}</Text>}
       </TouchableOpacity>
     </View>
   );

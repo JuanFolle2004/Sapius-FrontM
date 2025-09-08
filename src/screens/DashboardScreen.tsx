@@ -108,8 +108,8 @@ export default function DashboardScreen() {
       {/* Cards row 1: Streak */}
       <View style={styles.cardRow}>
         <View style={[styles.bigCard, styles.cardStreak]}> 
-          <Text style={styles.cardTitle}>Streak</Text>
-          <Text style={styles.streakValue}>{streakDays} days</Text>
+          <Text style={styles.cardTitle}>{t('dashboard.streak')}</Text>
+          <Text style={styles.streakValue}>{t('dashboard.days', { count: streakDays })}</Text>
         </View>
       </View>
 
@@ -117,17 +117,17 @@ export default function DashboardScreen() {
       <View style={styles.cardRow}>
         <TouchableOpacity style={[styles.squareCard, styles.cardLibrary]} onPress={() => navigation.navigate('Library')}>
           <Ionicons name="library-outline" size={24} color="#1f2937" />
-          <Text style={styles.squareText}>Library</Text>
+          <Text style={styles.squareText}>{t('common.library')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.squareCard, styles.cardLeagues]} onPress={() => navigation.navigate('Leagues')}>
           <Ionicons name="trophy-outline" size={24} color="#1f2937" />
-          <Text style={styles.squareText}>Leagues</Text>
+          <Text style={styles.squareText}>{t('common.leagues')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Optional: Refill energy quick action */}
       <TouchableOpacity style={styles.refillBtn} onPress={() => refill()}>
-        <Text style={styles.refillText}>Refill Energy</Text>
+        <Text style={styles.refillText}>{t('dashboard.refillEnergy')}</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );

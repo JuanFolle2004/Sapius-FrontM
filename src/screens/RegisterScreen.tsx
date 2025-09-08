@@ -18,12 +18,14 @@ import { register, login } from '../services/auth';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getMe } from '../services/userService';
 import { useUser } from '../context/UserContext';
+import { useTranslation } from 'react-i18next';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Register'>;
 
 export default function RegisterScreen() {
   const navigation = useNavigation<Nav>();
   const { setToken, setUser, setJustRegistered } = useUser();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,7 +49,7 @@ export default function RegisterScreen() {
     setErrors({});
 
     if (!birthDate) {
-      setErrors({ birthDate: 'Please select your birth date' });
+      setErrors({ birthDate: t('register.birthDateRequired') });
       return;
     }
 
@@ -103,11 +105,11 @@ export default function RegisterScreen() {
       >
         <ScrollView contentContainerStyle={styles.scroll}>
           <View style={styles.form}>
-          <Text style={styles.title}>Create your account</Text>
+          <Text style={styles.title}>{t('register.title')}</Text>
 
           <TextInput
             style={inputStyle('email')}
-            placeholder="Email"
+            placeholder={t('register.email')}
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
@@ -117,7 +119,7 @@ export default function RegisterScreen() {
 
           <TextInput
             style={inputStyle('password')}
-            placeholder="Password"
+            placeholder={t('register.password')}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -126,7 +128,7 @@ export default function RegisterScreen() {
 
           <TextInput
             style={inputStyle('name')}
-            placeholder="First name"
+            placeholder={t('register.firstName')}
             value={name}
             onChangeText={setName}
           />
@@ -134,7 +136,7 @@ export default function RegisterScreen() {
 
           <TextInput
             style={inputStyle('lastname')}
-            placeholder="Last name"
+            placeholder={t('register.lastName')}
             value={lastname}
             onChangeText={setLastname}
           />
@@ -142,7 +144,7 @@ export default function RegisterScreen() {
 
           <TextInput
             style={inputStyle('phone')}
-            placeholder="Phone (optional)"
+            placeholder={t('register.phoneOptional')}
             keyboardType="phone-pad"
             value={phone}
             onChangeText={setPhone}
@@ -150,13 +152,13 @@ export default function RegisterScreen() {
           {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
 
           {/* Birth date */}
-          <Text style={styles.label}>Birth date</Text>
+          <Text style={styles.label}>{t('register.birthDate')}</Text>
           <TouchableOpacity
             style={[styles.input, { justifyContent: 'center' }]}
             onPress={() => setShowDatePicker(true)}
           >
             <Text>
-              {birthDate ? birthDate.toDateString() : 'Select birth date'}
+              {birthDate ? birthDate.toDateString() : t('register.selectBirthDate')}
             </Text>
           </TouchableOpacity>
           {errors.birthDate && (
@@ -188,7 +190,7 @@ export default function RegisterScreen() {
             {loading ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text style={styles.buttonText}>Register</Text>
+              <Text style={styles.buttonText}>{t('register.submit')}</Text>
             )}
           </TouchableOpacity>
 
@@ -196,7 +198,7 @@ export default function RegisterScreen() {
             onPress={() => navigation.navigate('Login')}
             style={{ marginTop: 12 }}
           >
-            <Text style={{ textAlign: 'center' }}>Back to Login</Text>
+            <Text style={{ textAlign: 'center' }}>{t('register.backToLogin')}</Text>
           </TouchableOpacity>
           </View>
         </ScrollView>

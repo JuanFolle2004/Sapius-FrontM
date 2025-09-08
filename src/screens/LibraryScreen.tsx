@@ -48,14 +48,14 @@ export default function LibraryScreen() {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: 'Library',
+      title: t('common.library'),
       headerRight: () => (
         <TouchableOpacity onPress={showMenu} style={{ paddingHorizontal: 8 }}>
           <Ionicons name="settings-outline" size={22} color="#111827" />
         </TouchableOpacity>
       ),
     });
-  }, [navigation]);
+  }, [navigation, t]);
 
   async function fetchDashboard() {
     try {
@@ -85,7 +85,7 @@ export default function LibraryScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <Text style={styles.title}>Your Library</Text>
+      <Text style={styles.title}>{t('library.title')}</Text>
 
       <FlatList
         data={folders}
@@ -103,7 +103,7 @@ export default function LibraryScreen() {
             <Text numberOfLines={3} style={styles.bookTitle}>{item.title}</Text>
           </TouchableOpacity>
         )}
-        ListEmptyComponent={<Text style={styles.emptyText}>No books yet.</Text>}
+        ListEmptyComponent={<Text style={styles.emptyText}>{t('library.empty')}</Text>}
       />
 
       {/* Floating actions: Home + New Book */}
@@ -113,7 +113,7 @@ export default function LibraryScreen() {
         style={[styles.homeBtn, { bottom: 16 + insets.bottom }]}
       >
         <Ionicons name="home-outline" size={18} color="#ffffff" />
-        <Text style={styles.newBookText}>Home</Text>
+        <Text style={styles.newBookText}>{t('common.home')}</Text>
       </TouchableOpacity>
       <TouchableOpacity
         onPress={() => navigation.navigate('CourseGeneration')}
@@ -121,7 +121,7 @@ export default function LibraryScreen() {
         style={[styles.newBookBtn, { bottom: 16 + insets.bottom }]}
       >
         <Ionicons name="book-outline" size={18} color="#ffffff" />
-        <Text style={styles.newBookText}>New Book</Text>
+        <Text style={styles.newBookText}>{t('library.newBook')}</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );

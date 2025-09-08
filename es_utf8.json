@@ -1,0 +1,57 @@
+﻿{
+  "common": {
+    "logout": "Cerrar sesión",
+    "user": "Usuario",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "ok": "Aceptar",
+    "error": "Error",
+    "loading": "Cargando...",
+    "language": "Idioma",
+    "english": "Inglés",
+    "spanish": "Español",
+    "options": "Opciones"
+  },
+  "dashboard": {
+    "welcome": "¡Bienvenido, {{name}}!",
+    "newAIFolder": "Nueva carpeta con IA",
+    "randomTrivia": "Trivia aleatoria",
+    "noGames": "No hay juegos disponibles",
+    "randomTriviaError": "No se pudo cargar la trivia aleatoria.",
+    "noFolders": "Aún no hay carpetas."
+  },
+  "folder": {
+    "renameTitle": "Renombrar carpeta",
+    "renamePrompt": "Ingresa un nuevo nombre para esta carpeta:",
+    "renameSuccess": "Carpeta renombrada",
+    "renameError": "No se pudo renombrar la carpeta",
+    "confirmDelete": "Confirmar eliminación",
+    "confirmDeleteMessage": "¿Seguro que deseas eliminar esta carpeta?",
+    "deleted": "Eliminada",
+    "deleteSuccess": "Carpeta eliminada",
+    "deleteError": "No se pudo eliminar la carpeta",
+    "generateMore": "Generar más juegos",
+    "chooseDifficulty": "Elige la dificultad:",
+    "sameDifficulty": "Misma dificultad",
+    "easier": "Más fácil",
+    "harder": "Más difícil",
+    "allPlayed": "¡Todos los juegos jugados!",
+    "played": "Juegos jugados",
+    "games": "Juegos",
+    "rename": "Renombrar"
+  },
+  "game": {
+    "thankYou": "Gracias",
+    "feedbackSubmitted": "Tu comentario fue enviado.",
+    "feedbackError": "No se pudo enviar el comentario.",
+    "next": "Siguiente pregunta",
+    "finish": "Finalizar",
+    "reportIssue": "Reportar problema",
+    "explanationPrefix": "Explicación:",
+    "loading": "Cargando..."
+  },
+  "errors": {
+    "folderNotFound": "Carpeta no encontrada"
+  }
+}
+

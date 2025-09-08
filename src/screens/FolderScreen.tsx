@@ -198,6 +198,23 @@ export default function FolderScreen() {
   const unplayed = games.filter((g) => !g.played);
   const played = games.filter((g) => g.played);
 
+  // Start playing from the first unplayed game, else alert
+  const handlePlayUnplayed = () => {
+    if (!folder) return;
+    const first = unplayed[0];
+    if (!first) {
+      Alert.alert(t('folder.noMore'));
+      return;
+    }
+    navigation.navigate('GameScreen', {
+      gameId: first.id,
+      folderId: folder.id,
+      games,
+      currentIndex: games.findIndex((x) => x.id === first.id),
+      onPlayed: markGameAsPlayedLocally,
+    } as any);
+  };
+
   if (loading) return <LoadingView />;
   if (!folder) return <SafeAreaView style={styles.center} edges={['top', 'bottom']}><Text>{t('errors.folderNotFound')}</Text></SafeAreaView>;
 
@@ -210,7 +227,7 @@ export default function FolderScreen() {
         style={styles.libraryBtn}
       >
         <Ionicons name="library-outline" size={18} color="#ffffff" />
-        <Text style={styles.libraryBtnText}>Library</Text>
+        <Text style={styles.libraryBtnText}>{t('common.library')}</Text>
       </TouchableOpacity>
 
       {/* Book cover header directly below the Library button */}
@@ -219,9 +236,19 @@ export default function FolderScreen() {
         <Text numberOfLines={2} style={styles.bookTitle}>{folder.title}</Text>
       </View>
 
-      {/* Pages: show games as pages */}
+      {/* Primary actions above the list */}
+      <View style={styles.actionsContainer}>
+        <TouchableOpacity style={styles.primaryPlayBtn} onPress={handlePlayUnplayed}>
+          <Text style={styles.primaryPlayText}>{t('folder.play')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.generateBtn} onPress={showGenerateOptions} disabled={generating}>
+          <Text style={styles.generateText}>{generating ? t('common.loading') : t('folder.generateMore')}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Pages: show only played games as pages */}
       <FlatList
-        data={games}
+        data={played}
         keyExtractor={(g) => g.id}
         contentContainerStyle={{ paddingBottom: 120 }}
         renderItem={({ item, index }) => {
@@ -230,7 +257,7 @@ export default function FolderScreen() {
           return (
             <View style={[styles.pageCard, played && styles.pagePlayed]}>
               <View style={styles.pageHeader}>
-                <Text style={styles.pageNumber}>Page {index + 1}</Text>
+                <Text style={styles.pageNumber}>{t('folder.page')} {index + 1}</Text>
                 <Text style={styles.pageStatus}>{played ? (result?.correct ? '✅' : '❌') : '⏳'}</Text>
               </View>
               <Text numberOfLines={2} style={styles.pageTitle}>{item.title || 'Question'}</Text>
@@ -247,16 +274,11 @@ export default function FolderScreen() {
                   } as any)
                 }
               >
-                <Text style={styles.playText}>{played ? 'Review' : 'Play'}</Text>
+                <Text style={styles.playText}>{t('folder.play')}</Text>
               </TouchableOpacity>
             </View>
           );
         }}
-        ListFooterComponent={
-          <TouchableOpacity style={styles.addPagesBtn} onPress={showGenerateOptions} disabled={generating}>
-            <Text style={styles.addPagesText}>{generating ? 'Generating pages…' : 'Create more pages'}</Text>
-          </TouchableOpacity>
-        }
       />
 
       {/* Bottom fade so items gently disappear under the action bar */}
@@ -269,10 +291,10 @@ export default function FolderScreen() {
       {/* Bottom actions: rename / delete */}
       <View style={[styles.bottomBar, { bottom: 16 + insets.bottom }]}>
         <TouchableOpacity style={styles.renameBtn} onPress={handleRename}>
-          <Text style={styles.actionText}>Rename</Text>
+          <Text style={styles.actionText}>{t('folder.rename')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
-          <Text style={styles.actionText}>Delete</Text>
+          <Text style={styles.actionText}>{t('common.delete')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -364,4 +386,23 @@ const styles = StyleSheet.create({
     height: 220,
     zIndex: 10,
   },
+  // New styles for top actions
+  actionsContainer: {
+    marginBottom: 12,
+  },
+  primaryPlayBtn: {
+    backgroundColor: '#14b8a6',
+    padding: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  primaryPlayText: { color: 'white', fontWeight: '800' },
+  generateBtn: {
+    backgroundColor: '#f59e0b',
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  generateText: { color: 'white', fontWeight: '700' },
 });

@@ -1,0 +1,408 @@
+﻿    1 import React, { useState, useCallback } from 'react';
+    2 import {
+    3   View,
+    4   Text,
+    5   FlatList,
+    6   TouchableOpacity,
+    7   StyleSheet,
+    8   Alert,
+    9 } from 'react-native';
+   10 import { useRoute, useNavigation, RouteProp, useFocusEffect } from '@react-navigation/native';
+   11 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+   12 import { Game, Folder, RootStackParamList } from '../types';
+   13 import {
+   14   getFolderWithGames,
+   15   generateGamesForFolder,
+   16   updateFolder,
+   17   deleteFolder,
+   18 } from '../services/folderService';
+   19 import { getFolderProgress, FolderProgress } from '../services/gameService';
+   20 import { useUser } from '../context/UserContext';
+   21 import Prompt from 'react-native-prompt-android';
+   22 import { ActionSheetIOS, Platform } from 'react-native';
+   23 import { Ionicons } from '@expo/vector-icons';
+   24 import { LinearGradient } from 'expo-linear-gradient';
+   25 import { useTranslation } from 'react-i18next';
+   26 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+   27 import LoadingView from '../../components/LoadingView';
+   28 
+   29 type Route = RouteProp<RootStackParamList, 'FolderScreen'>;
+   30 type Nav = NativeStackNavigationProp<RootStackParamList, 'FolderScreen'>;
+   31 
+   32 type GameProgress = {
+   33   [gameId: string]: { correct: boolean; answeredAt: string };
+   34 };
+   35 
+   36 export default function FolderScreen() {
+   37   const { params } = useRoute<Route>();
+   38   const navigation = useNavigation<Nav>();
+   39   const { token } = useUser()!;
+   40   const { t } = useTranslation();
+   41   const insets = useSafeAreaInsets();
+   42 
+   43   const [folder, setFolder] = useState<Folder | null>(null);
+   44   const [games, setGames] = useState<Game[]>([]);
+   45   const [loading, setLoading] = useState(true);
+   46   const [generating, setGenerating] = useState(false);
+   47   const [progress, setProgress] = useState<GameProgress>({});
+   48 
+   49   // ðŸ”¹ Fetch folder + progress
+   50   async function fetchFolder() {
+   51     if (!token || !params?.folderId) return;
+   52     try {
+   53       const data = await getFolderWithGames(params.folderId);
+   54       setFolder(data.folder);
+   55 
+   56       const prog: FolderProgress = await getFolderProgress(params.folderId);
+   57       console.log("ðŸ“Š Progress fetched:", prog);
+   58 
+   59       setProgress(prog.playedGames || {});
+   60 
+   61       // merge `played` flag into games
+   62       const gamesWithProgress = data.games.map((g: Game) => ({
+   63         ...g,
+   64         played: !!prog.playedGames?.[g.id],
+   65       }));
+   66       setGames(gamesWithProgress);
+   67     } catch (e) {
+   68       console.log('âŒ folder fetch error', e);
+   69     } finally {
+   70       setLoading(false);
+   71     }
+   72   }
+   73 
+   74   // ðŸ”¹ Refetch on screen focus
+   75   useFocusEffect(
+   76     useCallback(() => {
+   77       fetchFolder();
+   78     }, [token, params?.folderId])
+   79   );
+   80 
+   81   // ðŸ”¹ Generate games
+   82   async function handleGenerate(difficulty: "same" | "easier" | "harder") {
+   83     if (!folder) return;
+   84     setGenerating(true);
+   85     try {
+   86       await generateGamesForFolder(folder.id, 5, difficulty);
+   87       await fetchFolder();
+   88     } catch (e) {
+   89       console.log('âŒ generate games error', e);
+   90     } finally {
+   91       setGenerating(false);
+   92     }
+   93   }
+   94 
+   95   function showGenerateOptions() {
+   96     if (Platform.OS === 'ios') {
+   97       ActionSheetIOS.showActionSheetWithOptions(
+   98         {
+   99           options: [
+  100             t('common.cancel'),
+  101             t('folder.sameDifficulty'),
+  102             t('folder.easier'),
+  103             t('folder.harder'),
+  104           ],
+  105           cancelButtonIndex: 0,
+  106         },
+  107         (buttonIndex) => {
+  108           if (buttonIndex === 1) handleGenerate("same");
+  109           if (buttonIndex === 2) handleGenerate("easier");
+  110           if (buttonIndex === 3) handleGenerate("harder");
+  111         }
+  112       );
+  113     } else {
+  114       Alert.alert(
+  115         t('folder.generateMore'),
+  116         t('folder.chooseDifficulty'),
+  117         [
+  118           { text: t('folder.sameDifficulty'), onPress: () => handleGenerate("same") },
+  119           { text: t('folder.easier'), onPress: () => handleGenerate("easier") },
+  120           { text: t('folder.harder'), onPress: () => handleGenerate("harder") },
+  121           { text: t('common.cancel'), style: "cancel" },
+  122         ]
+  123       );
+  124     }
+  125   }
+  126 
+  127   // ðŸ”¹ Rename folder
+  128   async function handleRename() {
+  129     if (!folder) return;
+  130     Prompt(
+  131       t('folder.renameTitle'),
+  132       t('folder.renamePrompt'),
+  133       [
+  134         { text: t('common.cancel'), style: 'cancel' },
+  135         {
+  136           text: t('common.ok'),
+  137           onPress: async (newTitle) => {
+  138             if (!newTitle || !newTitle.trim()) return;
+  139             try {
+  140               const updated = await updateFolder(folder.id, {
+  141                 title: newTitle,
+  142                 description: folder.description,
+  143                 prompt: folder.description || '',
+  144               });
+  145               setFolder(updated);
+  146               Alert.alert(t('folder.renameSuccess'));
+  147             } catch (e) {
+  148               console.log('âŒ rename error', e);
+  149               Alert.alert(t('common.error'), t('folder.renameError'));
+  150             }
+  151           },
+  152         },
+  153       ],
+  154       { defaultValue: folder.title }
+  155     );
+  156   }
+  157 
+  158   // ðŸ”¹ Delete folder
+  159   async function handleDelete() {
+  160     if (!folder) return;
+  161     Alert.alert('Confirm Delete', 'Are you sure you want to delete this folder?', [
+  162       { text: t('common.cancel'), style: 'cancel' },
+  163       {
+  164         text: t('common.delete'),
+  165         style: 'destructive',
+  166         onPress: async () => {
+  167           try {
+  168             await deleteFolder(folder.id);
+  169             Alert.alert(t('folder.deleted'), t('folder.deleteSuccess'));
+  170             navigation.goBack();
+  171           } catch (e) {
+  172             console.log('âŒ delete error', e);
+  173             Alert.alert(t('common.error'), t('folder.deleteError'));
+  174           }
+  175         },
+  176       },
+  177     ]);
+  178   }
+  179 
+  180   // ðŸ”¹ Callback from GameScreen
+  181   function markGameAsPlayedLocally(gameId: string, correct: boolean) {
+  182     setProgress((prev) => ({
+  183       ...prev,
+  184       [gameId]: { correct, answeredAt: new Date().toISOString() },
+  185     }));
+  186 
+  187     // also update local games with played = true
+  188     setGames((prev) =>
+  189       prev.map((g) => (g.id === gameId ? { ...g, played: true } : g))
+  190     );
+  191   }
+  192 
+  193   // ðŸ”¹ Progress stats
+  194   const totalPlayed = Object.keys(progress).length;
+  195   const correctCount = Object.values(progress).filter((p) => p.correct).length;
+  196   const percentage = totalPlayed > 0 ? Math.round((correctCount / totalPlayed) * 100) : 0;
+  197 
+  198   const unplayed = games.filter((g) => !g.played);
+  199   const played = games.filter((g) => g.played);
+  200 
+  201   // Start playing from the first unplayed game, else alert
+  202   const handlePlayUnplayed = () => {
+  203     if (!folder) return;
+  204     const first = unplayed[0];
+  205     if (!first) {
+  206       Alert.alert('No more games generated');
+  207       return;
+  208     }
+  209     navigation.navigate('GameScreen', {
+  210       gameId: first.id,
+  211       folderId: folder.id,
+  212       games,
+  213       currentIndex: games.findIndex((x) => x.id === first.id),
+  214       onPlayed: markGameAsPlayedLocally,
+  215     } as any);
+  216   };
+  217 
+  218   if (loading) return <LoadingView />;
+  219   if (!folder) return <SafeAreaView style={styles.center} edges={['top', 'bottom']}><Text>{t('errors.folderNotFound')}</Text></SafeAreaView>;
+  220 
+  221   return (
+  222     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+  223       {/* Library button stacked above the book header */}
+  224       <TouchableOpacity
+  225         onPress={() => navigation.navigate('Library')}
+  226         activeOpacity={0.9}
+  227         style={styles.libraryBtn}
+  228       >
+  229         <Ionicons name="library-outline" size={18} color="#ffffff" />
+  230         <Text style={styles.libraryBtnText}>Library</Text>
+  231       </TouchableOpacity>
+  232 
+  233       {/* Book cover header directly below the Library button */}
+  234       <View style={styles.bookHeader}>
+  235         <View style={styles.spine} />
+  236         <Text numberOfLines={2} style={styles.bookTitle}>{folder.title}</Text>
+  237       </View>
+  238 
+  239       {/* Primary actions above the list */}
+  240       <View style={styles.actionsContainer}>
+  241         <TouchableOpacity style={styles.primaryPlayBtn} onPress={handlePlayUnplayed}>
+  242           <Text style={styles.primaryPlayText}>Play</Text>
+  243         </TouchableOpacity>
+  244         <TouchableOpacity style={styles.generateBtn} onPress={showGenerateOptions} disabled={generating}>
+  245           <Text style={styles.generateText}>{generating ? 'Generatingâ€¦' : 'Generate More Games'}</Text>
+  246         </TouchableOpacity>
+  247       </View>
+  248 
+  249       {/* Pages: show only played games as pages */}
+  250       <FlatList
+  251         data={played}
+  252         keyExtractor={(g) => g.id}
+  253         contentContainerStyle={{ paddingBottom: 120 }}
+  254         renderItem={({ item, index }) => {
+  255           const result = progress[item.id];
+  256           const played = !!result;
+  257           return (
+  258             <View style={[styles.pageCard, played && styles.pagePlayed]}>
+  259               <View style={styles.pageHeader}>
+  260                 <Text style={styles.pageNumber}>Page {index + 1}</Text>
+  261                 <Text style={styles.pageStatus}>{played ? (result?.correct ? 'âœ…' : 'âŒ') : 'â³'}</Text>
+  262               </View>
+  263               <Text numberOfLines={2} style={styles.pageTitle}>{item.title || 'Question'}</Text>
+  264               <Text numberOfLines={2} style={styles.pagePreview}>{item.question}</Text>
+  265               <TouchableOpacity
+  266                 style={styles.playBtn}
+  267                 onPress={() =>
+  268                   navigation.navigate('GameScreen', {
+  269                     gameId: item.id,
+  270                     folderId: folder.id,
+  271                     games,
+  272                     currentIndex: games.findIndex((x) => x.id === item.id),
+  273                     onPlayed: markGameAsPlayedLocally,
+  274                   } as any)
+  275                 }
+  276               >
+  277                 <Text style={styles.playText}>Play</Text>
+  278               </TouchableOpacity>
+  279             </View>
+  280           );
+  281         }}
+  282       />
+  283 
+  284       {/* Bottom fade so items gently disappear under the action bar */}
+  285       <LinearGradient
+  286         pointerEvents="none"
+  287         colors={["rgba(248,250,252,0)", "rgba(248,250,252,0.85)", "#f8fafc"]}
+  288         style={styles.bottomFade}
+  289       />
+  290 
+  291       {/* Bottom actions: rename / delete */}
+  292       <View style={[styles.bottomBar, { bottom: 16 + insets.bottom }]}>
+  293         <TouchableOpacity style={styles.renameBtn} onPress={handleRename}>
+  294           <Text style={styles.actionText}>Rename</Text>
+  295         </TouchableOpacity>
+  296         <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+  297           <Text style={styles.actionText}>Delete</Text>
+  298         </TouchableOpacity>
+  299       </View>
+  300     </SafeAreaView>
+  301   );
+  302 }
+  303 
+  304 const styles = StyleSheet.create({
+  305   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  306   container: { flex: 1, padding: 16, backgroundColor: '#f8fafc' },
+  307   bookHeader: {
+  308     height: 80,
+  309     backgroundColor: '#fde68a',
+  310     borderRadius: 16,
+  311     marginBottom: 12,
+  312     justifyContent: 'center',
+  313     paddingLeft: 16,
+  314     shadowColor: '#000',
+  315     shadowOpacity: 0.06,
+  316     shadowRadius: 8,
+  317     elevation: 2,
+  318   },
+  319   spine: {
+  320     position: 'absolute',
+  321     left: 0,
+  322     top: 0,
+  323     bottom: 0,
+  324     width: 10,
+  325     backgroundColor: 'rgba(0,0,0,0.15)',
+  326     borderTopLeftRadius: 16,
+  327     borderBottomLeftRadius: 16,
+  328   },
+  329   bookTitle: { fontSize: 22, fontWeight: '800', color: '#1f2937', paddingLeft: 8 },
+  330   pageCard: {
+  331     backgroundColor: '#fff',
+  332     padding: 16,
+  333     borderRadius: 16,
+  334     marginBottom: 12,
+  335     borderWidth: 1,
+  336     borderColor: '#e5e7eb',
+  337     shadowColor: '#000',
+  338     shadowOpacity: 0.04,
+  339     shadowRadius: 6,
+  340     elevation: 1,
+  341   },
+  342   pagePlayed: {
+  343     backgroundColor: '#f9fafb',
+  344   },
+  345   pageHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  346   pageNumber: { color: '#6b7280', fontWeight: '700' },
+  347   pageStatus: { fontSize: 18 },
+  348   pageTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
+  349   pagePreview: { color: '#4b5563' },
+  350   playBtn: { marginTop: 10, backgroundColor: '#14b8a6', padding: 12, borderRadius: 12, alignItems: 'center' },
+  351   playText: { color: 'white', fontWeight: '700' },
+  352   addPagesBtn: { marginTop: 6, backgroundColor: '#f59e0b', padding: 12, borderRadius: 12, alignItems: 'center' },
+  353   addPagesText: { color: 'white', fontWeight: '700' },
+  354   bottomBar: {
+  355     position: 'absolute',
+  356     left: 16,
+  357     right: 16,
+  358     flexDirection: 'row',
+  359     justifyContent: 'space-between',
+  360     zIndex: 20,
+  361   },
+  362   renameBtn: { backgroundColor: '#3b82f6', padding: 14, borderRadius: 12, flex: 1, marginRight: 8, alignItems: 'center' },
+  363   deleteBtn: { backgroundColor: '#ef4444', padding: 14, borderRadius: 12, flex: 1, marginLeft: 8, alignItems: 'center' },
+  364   actionText: { color: 'white', fontWeight: '700' },
+  365   libraryBtn: {
+  366     alignSelf: 'flex-start',
+  367     backgroundColor: '#14b8a6',
+  368     paddingHorizontal: 16,
+  369     paddingVertical: 10,
+  370     borderRadius: 999,
+  371     flexDirection: 'row',
+  372     alignItems: 'center',
+  373     gap: 8,
+  374     shadowColor: '#000',
+  375     shadowOpacity: 0.15,
+  376     shadowRadius: 8,
+  377     elevation: 3,
+  378     marginBottom: 8,
+  379   },
+  380   libraryBtnText: { color: 'white', fontWeight: '800' },
+  381   bottomFade: {
+  382     position: 'absolute',
+  383     left: 0,
+  384     right: 0,
+  385     bottom: 0,
+  386     height: 220,
+  387     zIndex: 10,
+  388   },
+  389   // New styles for top actions
+  390   actionsContainer: {
+  391     marginBottom: 12,
+  392   },
+  393   primaryPlayBtn: {
+  394     backgroundColor: '#14b8a6',
+  395     padding: 14,
+  396     borderRadius: 12,
+  397     alignItems: 'center',
+  398     marginBottom: 8,
+  399   },
+  400   primaryPlayText: { color: 'white', fontWeight: '800' },
+  401   generateBtn: {
+  402     backgroundColor: '#f59e0b',
+  403     padding: 12,
+  404     borderRadius: 12,
+  405     alignItems: 'center',
+  406   },
+  407   generateText: { color: 'white', fontWeight: '700' },
+  408 });

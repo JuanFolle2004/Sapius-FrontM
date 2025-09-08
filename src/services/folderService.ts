@@ -1,4 +1,5 @@
 import api from './api';
+import i18n from '../i18n';
 import type { Folder, Game } from '../types';
 
 // Get all user folders
@@ -37,11 +38,13 @@ export async function createFolder(payload: {
 export async function generateGamesForFolder(
   folderId: string,
   duration: number = 5,
-  difficulty: "same" | "easier" | "harder" = "same"
+  difficulty: "same" | "easier" | "harder" = "same",
+  language?: 'en' | 'es'
 ) {
   const { data } = await api.post(`/ai/generate-from-folder/${folderId}`, {
-    duration: Number(duration),   // ✅ force numeric
+    duration: Number(duration), // ensure numeric
     difficulty,
+    language: language || (i18n.language as 'en' | 'es'),
   });
   return data;
 }

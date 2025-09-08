@@ -15,6 +15,7 @@ import InterestsScreen from '../screens/InterestsScreen';
 import LibraryScreen from '../screens/LibraryScreen';
 import LeaguesScreen from '../screens/LeaguesScreen';
 import LoadingView from '../../components/LoadingView';
+import { useTranslation } from 'react-i18next';
 
 const AuthStack = createNativeStackNavigator<RootStackParamList>();
 const AppStack  = createNativeStackNavigator<RootStackParamList>();
@@ -30,25 +31,27 @@ function AuthNavigator() {
 }
 
 function MainNavigator() {
+  const { t } = useTranslation();
   return (
     <AppStack.Navigator>
       <AppStack.Screen name="Dashboard" component={DashboardScreen} options={{ headerShown: false }} />
       <AppStack.Screen name="Library" component={LibraryScreen} options={{ headerShown: false }} />
       <AppStack.Screen name="Leagues" component={LeaguesScreen} options={{ headerShown: false }} />
       <AppStack.Screen name="FolderScreen" component={FolderScreen} options={{ headerShown: false }} />
-      <AppStack.Screen name="GameScreen" component={GameScreen} options={{ title: 'Game' }} />
-      <AppStack.Screen name="CourseGeneration" component={CourseGenerationScreen} options={{ title: 'Generate Course' }} />
+      <AppStack.Screen name="GameScreen" component={GameScreen} options={{ title: t('game.title', { defaultValue: 'Game' }) }} />
+      <AppStack.Screen name="CourseGeneration" component={CourseGenerationScreen} options={{ title: t('course.navTitle') }} />
     </AppStack.Navigator>
   );
 }
 
 function InterestsNavigator() {
+  const { t } = useTranslation();
   return (
     <InterestsStack.Navigator>
       <InterestsStack.Screen
         name="Interests"
         component={InterestsScreen}
-        options={{ title: 'Pick Your Interests' }}
+        options={{ title: t('interests.navTitle', { defaultValue: 'Pick Your Interests' }) }}
       />
     </InterestsStack.Navigator>
   );

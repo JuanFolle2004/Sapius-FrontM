@@ -5,6 +5,7 @@ import type { RootStackParamList } from '../types';
 import { STANDARD_INTERESTS } from '../constants/interests';
 import { useUser } from '../context/UserContext';
 import { getMe, updateUserInterests } from '../services/userService';
+import { useTranslation } from 'react-i18next';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Interests'>;
 
@@ -12,6 +13,7 @@ export default function InterestsScreen() {
   const { token, setUser, setJustRegistered } = useUser();
   const [selected, setSelected] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useTranslation();
 
   const toggleInterest = (interest: string) => {
     if (isSubmitting) return; // evita toques mientras se envía
@@ -20,14 +22,14 @@ export default function InterestsScreen() {
     } else if (selected.length < 5) {
       setSelected([...selected, interest]);
     } else {
-      Alert.alert('Limit', 'You can only choose 5 interests.');
+      Alert.alert(t('interests.limitTitle'), t('interests.limitMessage'));
     }
   };
 
   const onSubmit = async () => {
     if (isSubmitting) return; // anti double-tap
     if (selected.length !== 5) {
-      Alert.alert('Error', 'Please select exactly 5 interests.');
+      Alert.alert(t('interests.errorTitle'), t('interests.errorSelectFive'));
       return;
     }
 
@@ -56,8 +58,8 @@ export default function InterestsScreen() {
 
   return (
     <View style={styles.container} pointerEvents={isSubmitting ? 'none' : 'auto'}>
-      <Text style={styles.title}>Choose 5 interests</Text>
-      <Text style={styles.counter}>{selected.length} / 5 selected</Text>
+      <Text style={styles.title}>{t('interests.title')}</Text>
+      <Text style={styles.counter}>{t('interests.counter', { selected: selected.length })}</Text>
 
       <FlatList
         data={STANDARD_INTERESTS}
@@ -73,7 +75,7 @@ export default function InterestsScreen() {
             onPress={() => toggleInterest(item)}
             activeOpacity={0.7}
           >
-            <Text style={styles.itemText}>{item}</Text>
+            <Text style={styles.itemText}>{t(`interests.items.${item}`, { defaultValue: item })}</Text>
           </TouchableOpacity>
         )}
         contentContainerStyle={{ paddingBottom: 20 }}
@@ -91,7 +93,7 @@ export default function InterestsScreen() {
         {isSubmitting ? (
           <ActivityIndicator color="#14b8a6" />
         ) : (
-          <Text style={styles.saveText}>Save Interests</Text>
+          <Text style={styles.saveText}>{t('interests.save')}</Text>
         )}
       </TouchableOpacity>
 

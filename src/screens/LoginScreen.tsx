@@ -11,12 +11,14 @@ import { login } from '../services/auth';
 import { getMe } from '../services/userService';
 
 import { useUser } from '../context/UserContext';
+import { useTranslation } from 'react-i18next';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 export default function LoginScreen() {
   const navigation = useNavigation<Nav>();
   const { setToken, setUser } = useUser();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +27,7 @@ export default function LoginScreen() {
 
   const onSubmit = async () => {
     if (!email || !password) {
-      setError('Please enter your email and password.');
+      setError(t('login.missingFields'));
       return;
     }
     setSubmitting(true);
@@ -44,7 +46,7 @@ export default function LoginScreen() {
 
       // ⚠️ No manual navigation — AppNavigator will redirect automatically
     } catch (e: any) {
-      setError('Login failed. Check your credentials.');
+      setError(t('login.failed'));
       console.log(e?.response?.data || e?.message);
     } finally {
       setSubmitting(false);
@@ -59,11 +61,11 @@ export default function LoginScreen() {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <TextInput style={styles.input} placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail}/>
-        <TextInput style={styles.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} onSubmitEditing={onSubmit}/>
+        <TextInput style={styles.input} placeholder={t('login.email')} autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail}/>
+        <TextInput style={styles.input} placeholder={t('login.password')} secureTextEntry value={password} onChangeText={setPassword} onSubmitEditing={onSubmit}/>
 
         <TouchableOpacity style={[styles.button, submitting && styles.buttonDisabled]} onPress={onSubmit} disabled={submitting}>
-          {submitting ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Log In</Text>}
+          {submitting ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>{t('login.submit')}</Text>}
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate('Register')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
