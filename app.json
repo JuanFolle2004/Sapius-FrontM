@@ -4,7 +4,9 @@
     "slug": "Sapius-FrontM",
     "entryPoint": "./index.js",
     "scheme": "sapiusfrontm",
-    "ios": { "supportsTablet": true },
+    "ios": {
+      "supportsTablet": true
+    },
     "android": {
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
@@ -26,7 +28,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-router"
     ]
   }
 }
